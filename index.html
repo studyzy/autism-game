@@ -26,23 +26,25 @@
         .game-container {
             position: relative;
             width: 90%;
-            height: 150px;
+            height: 350px;
             margin-bottom: 20px;
             border: 2px solid #87cefa;
             border-radius: 10px;
             background-color: #e6f7ff;
             overflow: hidden;
+            display: flex;
+            align-items: center;
         }
         .circle {
             position: absolute;
-            width: 50px;
-            height: 50px;
+            width: 150px;
+            height: 150px;
             background-color: lightcoral;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 24px;
+            font-size: 84px;
             color: white;
             font-weight: bold;
         }
@@ -60,11 +62,11 @@
         }
         button {
             width: 100px;
-            height: 50px;
-            font-size: 24px;
+            height: 100px;
+            font-size: 44px;
             background-color: #ffa07a;
             border: none;
-            border-radius: 10px;
+            border-radius: 50%; /* 使按钮变成圆形 */
             box-shadow: 2px 2px 5px #888888;
             cursor: pointer;
             transition: background-color 0.3s;
@@ -73,10 +75,9 @@
             background-color: #ff6347;
         }
         .score, .time, .level {
-            font-size: 20px;
+            font-size: 40px;
             color: #4682b4;
         }
-        /* 新增的样式代码 */
         .popup {
             position: fixed;
             top: 50%;
@@ -125,7 +126,7 @@
 
 <!-- 新增的气泡窗口 -->
 <div class="popup" id="popup">
-    <p>欢迎来到专注力小游戏！点击左右按钮来控制圆形的移动方向。得分越高，难度越大。点击开始按钮开始游戏。</p>
+    <p>欢迎来到专注力小游戏！请观察圆形运动的方向，并点击左右按钮，圆形中的箭头是干扰项。得分越高，难度越大。点击开始按钮开始游戏。</p>
     <button id="startBtn">开始</button>
 </div>
 
@@ -147,7 +148,7 @@
     let moveDirection = Math.random() < 0.5 ? 'left' : 'right'; // 初始移动方向
     let arrowDirection = Math.random() < 0.5 ? '←' : '→';
     let level = 0;
-    const circleSpacing = 70; // 圆形之间的间隔
+    const circleSpacing = 200; // 圆形之间的间隔
     const baseRoundTime = 5.0; // 基础每轮时间
     const baseSpeed = 2; // 基础移动速度
     const levelTimeReduction = 0.5; // 每个难度等级减少的时间
