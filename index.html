@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>专注力小游戏</title>
+    <title>专注力小游戏1</title>
     <style>
-        /* 现有的样式代码 */
+
         body {
             font-family: 'Comic Sans MS', cursive, sans-serif;
             background-color: #f0f8ff;
@@ -75,7 +75,7 @@
             background-color: #ff6347;
         }
         .score, .time, .level {
-            font-size: 40px;
+            font-size: 30px;
             color: #4682b4;
         }
         .popup {
@@ -222,7 +222,17 @@
         }
         animationFrameId = requestAnimationFrame(gameLoop);
     }
-
+    function resetGame() {
+        score = 0;
+        timeLeft = 120;
+        roundTimeLeft = 5;
+        level = 0;
+        scoreDisplay.innerText = score;
+        timeDisplay.innerText = timeLeft;
+        roundTimeDisplay.innerText = roundTimeLeft.toFixed(1);
+        levelDisplay.innerText = level;
+        resetCircles();
+    }
     function startGame() {
         timerInterval = setInterval(() => {
             timeLeft -= 1;
@@ -230,7 +240,10 @@
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
                 cancelAnimationFrame(animationFrameId);
-                alert('游戏结束！您的最终得分是：' + score);
+                if (confirm('游戏结束！您的最终得分是：' + score + '。是否重新开始？')) {
+                    resetGame();
+                    startGame();
+                }
             }
         }, 1000);
 
