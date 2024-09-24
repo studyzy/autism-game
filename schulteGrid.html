@@ -152,6 +152,7 @@
             timeList.appendChild(listItem);
         });
     }
+    let remainingNumbers = []; // 用于存储剩余的数字
 
     // 创建游戏板
     function createBoard() {
@@ -166,6 +167,9 @@
         } else {
             numbers = generateNumbers(gridSize);
         }
+        correctNumber = Math.min(...numbers); // 设置 correctNumber 为最小的数字
+        remainingNumbers = [...numbers].sort((a, b) => a - b); // 初始化剩余数字并排序
+
         shuffleArray(numbers);
 
         // 创建网格单元格
@@ -217,8 +221,9 @@
         if (clickedNumber === correctNumber) {
             cell.classList.add('completed');
             cell.style.backgroundColor = '#d3d3d3'; // 确保正确点击时背景颜色被覆盖
-            correctNumber++;
-            if (correctNumber > gridSize * gridSize) {
+            remainingNumbers.shift(); // 移除已点击的最小数字
+            correctNumber = remainingNumbers[0]; // 更新 correctNumber 为下一个最小数字
+            if (remainingNumbers.length === 0) {
                 setTimeout(() => {
                     updateLevel();
                     createBoard();
