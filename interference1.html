@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专注力小游戏1</title>
+    <style>
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #f0f8ff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            height: 100vh;
+        }
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .game-container {
+            position: relative;
+            width: 90%;
+            height: 350px;
+            margin-bottom: 20px;
+            border: 2px solid #87cefa;
+            border-radius: 10px;
+            background-color: #e6f7ff;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+        .circle {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            background-color: lightcoral;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 84px;
+            color: white;
+            font-weight: bold;
+        }
+        .round-time {
+            font-size: 20px;
+            color: #4682b4;
+            margin-bottom: 10px;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            position: fixed;
+            bottom: 10px;
+        }
+        button {
+            width: 100px;
+            height: 100px;
+            font-size: 44px;
+            background-color: #ffa07a;
+            border: none;
+            border-radius: 50%; /* 使按钮变成圆形 */
+            box-shadow: 2px 2px 5px #888888;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #ff6347;
+        }
+        .score, .time, .level {
+            font-size: 30px;
+            color: #4682b4;
+        }
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 2px solid #87cefa;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            z-index: 1000;
+        }
+        .popup button {
+            margin-top: 20px;
+            width: 100px;
+            height: 50px;
+            font-size: 24px;
+            background-color: #ffa07a;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 2px 2px 5px #888888;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .popup button:hover {
+            background-color: #ff6347;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-header">
+    <div class="score">得分: <span id="score">0</span></div>
+    <div class="round-time">本轮剩余时间: <span id="round-time">5</span>秒</div>
+    <div class="time">剩余时间: <span id="time">120</span>秒</div>
+    <div class="level">难度等级: <span id="level">0</span></div>
+</div>
+
+<div class="game-container" id="game-container"></div>
+
+<div class="buttons">
+    <button id="leftBtn">←</button>
+    <button id="rightBtn">→</button>
+</div>
+
+<!-- 新增的气泡窗口 -->
+<div class="popup" id="popup">
+    <p>欢迎来到专注力小游戏！请观察圆形运动的方向，并点击左右按钮，圆形中的箭头是干扰项。得分越高，难度越大。点击开始按钮开始游戏。</p>
+    <button id="startBtn">开始</button>
+</div>
+
+<script>
+    const gameContainer = document.getElementById('game-container');
+    const scoreDisplay = document.getElementById('score');
+    const timeDisplay = document.getElementById('time');
+    const roundTimeDisplay = document.getElementById('round-time');
+    const levelDisplay = document.getElementById('level');
+    const leftBtn = document.getElementById('leftBtn');
+    const rightBtn = document.getElementById('rightBtn');
+    const popup = document.getElementById('popup');
+    const startBtn = document.getElementById('startBtn');
+
+    let score = 0;
+    let timeLeft = 120;
+    let roundTimeLeft = 5;
+    let circles = [];
+    let moveDirection = Math.random() < 0.5 ? 'left' : 'right'; // 初始移动方向
+    let arrowDirection = Math.random() < 0.5 ? '←' : '→';
+    let level = 0;
+    const circleSpacing = 200; // 圆形之间的间隔
+    const baseRoundTime = 5.0; // 基础每轮时间
+    const baseSpeed = 2; // 基础移动速度
+    const levelTimeReduction = 0.5; // 每个难度等级减少的时间
+    const levelSpeedReduction = 20; // 每个难度等级减少的速度
+
+    function createCircles() {
+        for (let i = 0; i < 100; i++) {
+            const circle = document.createElement('div');
+            circle.className = 'circle';
+            circle.innerText = arrowDirection;
+            gameContainer.appendChild(circle);
+            circles.push(circle);
+            circle.style.left = `${(i-50) * circleSpacing}px`;
+        }
+    }
+
+    function resetCircles() {
+        moveDirection = Math.random() < 0.5 ? 'left' : 'right';
+        arrowDirection = Math.random() < 0.5 ? '←' : '→';
+        circles.forEach((circle, index) => {
+            circle.innerText = arrowDirection;
+            circle.style.left = `${(index-50) * circleSpacing}px`;
+        });
+    }
+
+    function updateCircles() {
+        const speed = 1;
+        circles.forEach((circle) => {
+            let circlePosition = parseInt(circle.style.left);
+            // Move the circle
+            if (moveDirection === 'left') {
+                circlePosition -= speed;
+            } else {
+                circlePosition += speed;
+            }
+            circle.style.left = circlePosition + 'px';
+        });
+    }
+
+    function handleUserInput(direction) {
+        if (direction === moveDirection) {
+            score += 10;
+        } else {
+            score -= 10;
+        }
+        scoreDisplay.innerText = score;
+
+        level = Math.floor(score / 50);
+        levelDisplay.innerText = level;
+
+        roundTimeLeft = baseRoundTime - level * levelTimeReduction; // 重置每轮倒计时
+        if (roundTimeLeft < 0.1) {
+            roundTimeLeft = 0.1;
+        }
+        resetCircles(); // 重置圆形位置和方向
+    }
+
+    leftBtn.addEventListener('click', () => handleUserInput('left'));
+    rightBtn.addEventListener('click', () => handleUserInput('right'));
+
+    let animationFrameId;
+    let timerInterval;
+    let roundTimerInterval;
+
+    let lastUpdateTime = 0;
+    function gameLoop(timestamp) {
+        const updateInterval = baseSpeed + level * levelSpeedReduction; // 更新间隔时间，单位为毫秒
+        if (timestamp - lastUpdateTime >= updateInterval) {
+            updateCircles();
+            lastUpdateTime = timestamp;
+        }
+        animationFrameId = requestAnimationFrame(gameLoop);
+    }
+    function resetGame() {
+        score = 0;
+        timeLeft = 120;
+        roundTimeLeft = 5;
+        level = 0;
+        scoreDisplay.innerText = score;
+        timeDisplay.innerText = timeLeft;
+        roundTimeDisplay.innerText = roundTimeLeft.toFixed(1);
+        levelDisplay.innerText = level;
+        resetCircles();
+    }
+    function startGame() {
+        timerInterval = setInterval(() => {
+            timeLeft -= 1;
+            timeDisplay.innerText = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                cancelAnimationFrame(animationFrameId);
+                if (confirm('游戏结束！您的最终得分是：' + score + '。是否重新开始？')) {
+                    resetGame();
+                    startGame();
+                }
+            }
+        }, 1000);
+
+        roundTimerInterval = setInterval(() => {
+            roundTimeLeft -= 0.1;
+            roundTimeDisplay.innerText = roundTimeLeft.toFixed(1);
+            if (roundTimeLeft <= 0) {
+                score -= 10;
+                scoreDisplay.innerText = score;
+                roundTimeLeft = baseRoundTime - level * levelTimeReduction; // 重置每轮倒计时
+                resetCircles(); // 重置圆形位置和方向
+            }
+        }, 100);
+
+        animationFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    createCircles(); // 初始生成100个圆形
+
+    // 点击开始按钮后关闭气泡窗口并开始游戏计时
+    startBtn.addEventListener('click', () => {
+        popup.style.display = 'none';
+        startGame();
+    });
+</script>
+
+</body>
+</html>
