@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专注力与记忆力训练游戏</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            margin: 10px;
+        }
+        #info {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        #gameBoard {
+            display: grid;
+            gap: 5px;
+        }
+        .grid-cell {
+            width: 60px;
+            height: 60px;
+            background-color: #9acd32;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+        .highlighted {
+            background-color: #ff6347;
+        }
+        .wrong {
+            background-color: #ff0000;
+            color: white;
+            font-size: 32px;
+        }
+        #scoreBoard {
+            margin-top: 20px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+<h1>记忆训练游戏</h1>
+<div id="info">
+    <p>剩余时间: <span id="time">120</span> 秒</p>
+    <p>记忆倒计时: <span id="memoryTime">5.0</span> 秒</p>
+    <p>难度值: <span id="difficulty">1</span></p>
+    <p>总得分: <span id="score">0</span></p>
+</div>
+<div>
+    <label for="showNumbers">显示阿拉伯数字</label>
+    <label class="switch">
+        <input type="checkbox" id="showNumbers" checked>
+        <span class="slider"></span>
+    </label>
+</div>
+<div id="gameBoard"></div>
+<div id="scoreBoard"></div>
+
+<script>
+    let totalTime = 120;
+    let timeLeft = totalTime;
+    let score = 0;
+    let difficulty = 1;
+    let rows = 3;
+    let cols = 3;
+    let cells = [];
+    let highlightedCells = [];
+    let attempts = 0;
+    let maxAttempts = 3;
+    let N = 3;
+    let memoryTime = 5.0;
+    let memoryTimeLeft = memoryTime;
+
+    // 更新难度值和格子行列数
+    function updateDifficulty() {
+        difficulty = Math.floor(score / 10) + 1;
+        rows = 3 + Math.floor(difficulty / 5);
+        cols = 3 + Math.floor(difficulty / 3);
+        N = 3 + difficulty - 1;
+        memoryTime = Math.max(0.5, 5 - difficulty * 0.5);
+        memoryTimeLeft = memoryTime;
+        document.getElementById('memoryTime').textContent = memoryTimeLeft.toFixed(1);
+    }
+
+    // 创建游戏板
+    function createBoard() {
+        const gameBoard = document.getElementById('gameBoard');
+        gameBoard.innerHTML = '';
+        gameBoard.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        gameBoard.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+        cells = [];
+        const showNumbers = document.getElementById('showNumbers').checked;
+        for (let i = 0; i < rows * cols; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('grid-cell');
+            if (showNumbers) {
+                cell.textContent = i + 1;
+            }
+            cell.addEventListener('click', () => handleCellClick(i));
+            gameBoard.appendChild(cell);
+            cells.push(cell);
+        }
+    }
+
+    // 随机高亮N个格子
+    function highlightRandomCells() {
+        highlightedCells = [];
+        while (highlightedCells.length < N) {
+            const randomIndex = Math.floor(Math.random() * cells.length);
+            if (!highlightedCells.includes(randomIndex)) {
+                highlightedCells.push(randomIndex);
+                cells[randomIndex].classList.add('highlighted');
+            }
+        }
+        disableClicks();
+        const memoryInterval = setInterval(() => {
+            memoryTimeLeft -= 0.1;
+            document.getElementById('memoryTime').textContent = memoryTimeLeft.toFixed(1);
+            if (memoryTimeLeft <= 0) {
+                clearInterval(memoryInterval);
+                highlightedCells.forEach(index => cells[index].classList.remove('highlighted'));
+                enableClicks();
+            }
+        }, 100);
+    }
+
+    // 禁用点击事件
+    function disableClicks() {
+        cells.forEach(cell => cell.style.pointerEvents = 'none');
+    }
+
+    // 启用点击事件
+    function enableClicks() {
+        cells.forEach(cell => cell.style.pointerEvents = 'auto');
+    }
+
+    // 处理格子点击事件
+    function handleCellClick(index) {
+        if (highlightedCells.includes(index)) {
+            cells[index].classList.add('highlighted');
+            highlightedCells.splice(highlightedCells.indexOf(index), 1);
+            if (highlightedCells.length === 0) {
+                score += 10;
+                document.getElementById('score').textContent = score;
+                updateDifficulty();
+                resetBoard();
+            }
+        } else {
+            cells[index].classList.add('wrong');
+            cells[index].textContent = '❌';
+            attempts++;
+            if (attempts === maxAttempts) {
+                score -= 10;
+                document.getElementById('score').textContent = score;
+                resetBoard();
+            }
+        }
+    }
+
+    // 重置游戏板
+    function resetBoard() {
+        attempts = 0;
+        updateDifficulty();
+        createBoard();
+        highlightRandomCells();
+    }
+
+    // 更新剩余时间
+    function updateTime() {
+        if (timeLeft > 0) {
+            timeLeft--;
+            document.getElementById('time').textContent = timeLeft;
+            setTimeout(updateTime, 1000);
+        } else {
+            alert('游戏结束！您的得分是: ' + score);
+        }
+    }
+
+    // 开始游戏
+    function startGame() {
+        updateDifficulty();
+        createBoard();
+        highlightRandomCells();
+        updateTime();
+    }
+
+    // 监听开关变化，重新创建游戏板
+    document.getElementById('showNumbers').addEventListener('change', createBoard);
+
+    startGame();
+</script>
+</body>
+</html>
