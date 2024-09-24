@@ -7,6 +7,7 @@ childhood autism training game
 ## 专注力
 
 * [圆球往哪儿跑？](https://studyzy.github.io/autism-game/interference1.html)
+* [舒尔特方格](https://studyzy.github.io/autism-game/schulteGrid.html)
 
 ## 记忆力
 
