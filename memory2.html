@@ -190,28 +190,39 @@
         }
     }
 
-    // 随机高亮N个格子
+    let userSequence = [];
+    let currentHighlightIndex = 0;
+
+    // 随机高亮N个格子，按顺序依次高亮
     function highlightRandomCells() {
         highlightedCells = [];
+        userSequence = [];
+        currentHighlightIndex = 0;
+
         while (highlightedCells.length < N) {
             const randomIndex = Math.floor(Math.random() * cells.length);
             if (!highlightedCells.includes(randomIndex)) {
                 highlightedCells.push(randomIndex);
-                cells[randomIndex].classList.add('highlighted');
             }
         }
-        disableClicks();
-        const memoryInterval = setInterval(() => {
-            memoryTimeLeft -= 0.1;
 
-            if (memoryTimeLeft <= 0) {
-                memoryTimeLeft = 0;
-                clearInterval(memoryInterval);
-                highlightedCells.forEach(index => cells[index].classList.remove('highlighted'));
-                enableClicks();
-            }
-            document.getElementById('memoryTime').textContent = memoryTimeLeft.toFixed(1);
-        }, 100);
+        disableClicks();
+        highlightNextCell();
+    }
+
+    // 依次高亮下一个格子
+    function highlightNextCell() {
+        if (currentHighlightIndex < highlightedCells.length) {
+            const index = highlightedCells[currentHighlightIndex];
+            cells[index].classList.add('highlighted');
+            setTimeout(() => {
+                cells[index].classList.remove('highlighted');
+                currentHighlightIndex++;
+                setTimeout(highlightNextCell, 500);
+            }, 500);
+        } else {
+            enableClicks();
+        }
     }
 
     // 禁用点击事件
@@ -226,10 +237,10 @@
 
     // 处理格子点击事件
     function handleCellClick(index) {
-        if (highlightedCells.includes(index)) {
+        if (highlightedCells[userSequence.length] === index) {
             cells[index].classList.add('highlighted');
-            highlightedCells.splice(highlightedCells.indexOf(index), 1);
-            if (highlightedCells.length === 0) {
+            userSequence.push(index);
+            if (userSequence.length === highlightedCells.length) {
                 score += 10;
                 document.getElementById('score').textContent = score;
                 updateDifficulty();
@@ -237,7 +248,10 @@
             }
         } else {
             cells[index].classList.add('wrong');
-            cells[index].textContent = '❌';
+            setTimeout(() => {
+                cells[index].classList.remove('wrong');
+                cells[index].textContent = '';
+            }, 1000);
             attempts++;
             if (attempts === maxAttempts) {
                 score -= 10;
