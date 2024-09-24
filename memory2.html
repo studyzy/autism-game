@@ -115,13 +115,21 @@
         .popup button:hover {
             background-color: #ff6347;
         }
+        #score {
+            display: inline-block;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+
+        #score.flip {
+            transform: rotateX(90deg);
+        }
     </style>
 </head>
 <body>
 <h1>记忆训练游戏</h1>
 <div id="info">
     <p>剩余时间: <span id="time">120</span> 秒</p>
-    <p>记忆倒计时: <span id="memoryTime">4.0</span> 秒</p>
     <p>难度值: <span id="difficulty">1</span></p>
     <p>总得分: <span id="score">0</span></p>
 </div>
@@ -137,10 +145,13 @@
 
 <!-- 新增的气泡窗口 -->
 <div class="popup" id="popup">
-    <p>欢迎来到记忆训练游戏！请记住高亮的格子位置，并在记忆时间结束后点击正确的格子。点击开始按钮开始游戏。</p>
+    <p>欢迎来到记忆训练游戏！请记住格子的亮起的顺序和位置，并在记忆时间结束后按顺序点击正确的格子。点击开始按钮开始游戏。</p>
     <button id="startBtn">开始</button>
 </div>
-
+<!-- 新增的失败气泡窗口 -->
+<div class="popup" id="failPopup" style="display: none">
+    <p>😭 很遗憾，答错了，请继续加油💪🏻</p>
+</div>
 <script>
     let totalTime = 120;
     let timeLeft = totalTime;
@@ -153,21 +164,27 @@
     let attempts = 0;
     let maxAttempts = 3;
     let N = 3;
-    let memoryTime = 4.0;
-    let memoryTimeLeft = memoryTime;
 
+    const scoreElement = document.getElementById('score');
     const popup = document.getElementById('popup');
     const startBtn = document.getElementById('startBtn');
-
+    const failPopup = document.getElementById('failPopup');
+    // 更新得分
+    function updateScore(newScore) {
+        // 触发翻牌动画
+        scoreElement.classList.add('flip');
+        // 动画结束后更新得分并重置动画
+        setTimeout(() => {
+            scoreElement.textContent = newScore;
+            scoreElement.classList.remove('flip');
+        }, 500);
+    }
     // 更新难度值和格子行列数
     function updateDifficulty() {
         difficulty = Math.floor(score / 10) + 1;
         rows = 3 + Math.floor(difficulty / 5);
         cols = 3 + Math.floor(difficulty / 3);
-        N = 3 + difficulty - 1;
-        memoryTime = Math.max(0.5, 4 - difficulty * 0.5);
-        memoryTimeLeft = memoryTime;
-        document.getElementById('memoryTime').textContent = memoryTimeLeft.toFixed(1);
+        N = 3 + (difficulty - 1)/3;
     }
 
     // 创建游戏板
@@ -207,7 +224,8 @@
         }
 
         disableClicks();
-        highlightNextCell();
+        //等待0.5秒后开始高亮
+        setTimeout(highlightNextCell, 500);
     }
 
     // 依次高亮下一个格子
@@ -242,21 +260,28 @@
             userSequence.push(index);
             if (userSequence.length === highlightedCells.length) {
                 score += 10;
-                document.getElementById('score').textContent = score;
+                updateScore(score);
                 updateDifficulty();
-                resetBoard();
+                setTimeout(() => {
+                    resetBoard();
+                }, 500);
             }
         } else {
             cells[index].classList.add('wrong');
             setTimeout(() => {
                 cells[index].classList.remove('wrong');
-                cells[index].textContent = '';
             }, 1000);
             attempts++;
             if (attempts === maxAttempts) {
                 score -= 10;
-                document.getElementById('score').textContent = score;
-                resetBoard();
+                updateScore(score);
+                // 显示失败气泡窗口
+                failPopup.style.display = 'block';
+                // 一秒后隐藏失败气泡窗口并开始新的一轮
+                setTimeout(() => {
+                    failPopup.style.display = 'none';
+                    resetBoard();
+                }, 1000);
             }
         }
     }
