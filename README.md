@@ -8,6 +8,7 @@ childhood autism training game
 
 * [圆球往哪儿跑？](https://studyzy.github.io/autism-game/interference1.html)
 * [舒尔特方格](https://studyzy.github.io/autism-game/schulteGrid.html)
+* [西蒙说](https://studyzy.github.io/autism-game/simonSays.html)
 
 ## 记忆力
 

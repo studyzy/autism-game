@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>西蒙说游戏</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        #info {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        #score {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        #total-timer, #round-timer {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        #boy {
+            position: relative;
+            width: 800px;
+            height: 800px;
+            background-image: url('images/boy_face.jpeg');
+            background-size: cover;
+        }
+        .part {
+            position: absolute;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+        #eyes { width: 400px; height: 80px; top: 350px; left: 250px; background: rgba(255, 0, 0, 0); }
+        #nose { width: 100px; height: 100px; top: 420px; left: 420px; background: rgba(0, 255, 0, 0); }
+        #mouth { width: 180px; height: 100px; top: 520px; left: 380px; background: rgba(0, 0, 255, 0); }
+        #ears { width: 100px; height: 180px; top: 350px; left: 130px; background: rgba(255, 255, 0, 0); }
+        #head { width: 600px; height: 220px; top: 10px; left: 100px; background: rgba(255, 165, 0, 0); }
+        .penalty {
+            position: absolute;
+            font-size: 24px;
+            color: red;
+            opacity: 0;
+            transition: opacity 0.5s, transform 0.5s;
+        }
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 2px solid #87cefa;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            z-index: 1000;
+        }
+        .popup button {
+            margin-top: 20px;
+            width: 100px;
+            height: 50px;
+            font-size: 24px;
+            background-color: #ffa07a;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 2px 2px 5px #888888;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .popup button:hover {
+            background-color: #ff6347;
+        }
+    </style>
+</head>
+<body>
+<div id="info">
+<div id="score">得分: 0</div>
+<div id="total-timer">总时间: 120.0</div>
+<div id="round-timer">本轮时间: 5.0</div>
+</div>
+<div id="boy">
+    <div id="eyes" class="part" data-index="0"></div>
+    <div id="nose" class="part" data-index="1"></div>
+    <div id="mouth" class="part" data-index="2"></div>
+    <div id="ears" class="part" data-index="3"></div>
+    <div id="head" class="part" data-index="4"></div>
+</div>
+<div class="popup" id="popup">
+    <p>欢迎来到西蒙说游戏！请打开声音，并按照语音指令点击相应的部位。如果指令前有“西蒙说”，则点击正确部位得分，否则扣分，如果指令前没有“西蒙说”，则不要点击任何部位。点击开始按钮开始游戏。</p>
+    <button id="startBtn">开始</button>
+</div>
+ <script>
+    const scoreElement = document.getElementById('score');
+    const totalTimerElement = document.getElementById('total-timer');
+    const roundTimerElement = document.getElementById('round-timer');
+    const popup = document.getElementById('popup');
+    const startBtn = document.getElementById('startBtn');
+    let score = 0;
+    let currentCommandIndex = -1;
+    let simonSays = false;
+    let totalTimer;
+    let roundTimer;
+    let totalTimeLeft = 120.0;
+    let roundTimeLeft = 5.0;
+
+    function getRandomCommand() {
+        const commands = ['摸摸眼睛', '摸摸鼻子', '摸摸嘴巴', '摸摸耳朵', '摸摸头'];
+        const index = Math.floor(Math.random() * commands.length);
+        return { command: commands[index], index: index };
+    }
+
+    function sayCommand() {
+        simonSays = Math.random() < 0.5; // 50% 的概率生成“西蒙说”
+        const commandObj = getRandomCommand();
+        currentCommandIndex = commandObj.index;
+        const commandText = simonSays ? `西蒙说，${commandObj.command}` : commandObj.command;
+        speak(commandText);
+        startRoundTimer();
+    }
+
+    function speak(text) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+        utterance.onend = () => {
+            // 语音结束后，等待用户点击
+            setTimeout(() => {
+                const parts = document.querySelectorAll('.part');
+                parts.forEach(part => {
+                    part.addEventListener('click', handleClick);
+                });
+            }, 500);
+        };
+    }
+
+     function handleClick(event) {
+         clearTimeout(roundTimer);
+         const index = event.target.dataset.index;
+         const isCorrect = simonSays && index == currentCommandIndex;
+
+         if (isCorrect) {
+             score += 10;
+         } else {
+             score -= 10;
+             showPenalty(event.clientX, event.clientY);
+         }
+         scoreElement.textContent = `得分: ${score}`;
+         resetRound();
+     }
+
+    function showPenalty(x, y) {
+        const penaltyElement = document.createElement('div');
+        penaltyElement.className = 'penalty';
+        penaltyElement.textContent = '-10';
+        penaltyElement.style.left = `${x}px`;
+        penaltyElement.style.top = `${y}px`;
+        document.body.appendChild(penaltyElement);
+
+        setTimeout(() => {
+            penaltyElement.style.opacity = 1;
+            penaltyElement.style.transform = 'translateY(-20px)';
+        }, 0);
+
+        setTimeout(() => {
+            penaltyElement.remove();
+        }, 500);
+    }
+
+    function startRoundTimer() {
+        roundTimeLeft = 5.0;
+        roundTimerElement.textContent = `本轮时间: ${roundTimeLeft.toFixed(1)}`;
+        roundTimer = setInterval(() => {
+            roundTimeLeft -= 0.1;
+            if (roundTimeLeft < 0) {
+               roundTimeLeft=0;
+            }
+            roundTimerElement.textContent = `本轮时间: ${roundTimeLeft.toFixed(1)}`;
+            if (roundTimeLeft <= 0) {
+                clearInterval(roundTimer);
+                handleTimeout();
+            }
+        }, 100);
+    }
+
+    function handleTimeout() {
+        if (simonSays) {
+            score -= 10;
+        } else {
+            score += 10;
+        }
+        scoreElement.textContent = `得分: ${score}`;
+        resetRound();
+    }
+
+    function startTotalTimer() {
+        totalTimer = setInterval(() => {
+            totalTimeLeft -= 0.1;
+            totalTimerElement.textContent = `总时间: ${totalTimeLeft.toFixed(1)}`;
+            if (totalTimeLeft <= 0) {
+                clearInterval(totalTimer);
+                endGame();
+            }
+        }, 100);
+    }
+
+    function resetRound() {
+        const parts = document.querySelectorAll('.part');
+        parts.forEach(part => {
+            part.removeEventListener('click', handleClick);
+        });
+        setTimeout(sayCommand, 1000); // 1秒后开始新一轮
+    }
+
+    function endGame() {
+        alert(`游戏结束！您的得分是: ${score}`);
+        location.reload(); // 重新加载页面以重置游戏
+    }
+
+    startBtn.addEventListener('click', () => {
+        popup.style.display = 'none';
+        startTotalTimer();
+        sayCommand();
+    });
+</script>
+</body>
+</html>
