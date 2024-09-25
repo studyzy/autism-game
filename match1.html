@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoji 匹配记忆训练</title>
+    <title>对对碰·匹配记忆训练</title>
     <style>
         body {
             display: flex;
@@ -13,6 +13,7 @@
             height: 100vh;
             background-color: #f0f0f0;
             font-family: Arial, sans-serif;
+            margin: 0;
         }
         h1 {
             margin: 10px;
@@ -22,13 +23,10 @@
             gap: 5px;
         }
         .grid-cell {
-            width: 60px;
-            height: 60px;
             background-color: #87CEEB;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
             cursor: pointer;
             border-radius: 10px;
         }
@@ -175,6 +173,8 @@
             }
             document.getElementById('memoryTime').textContent = memoryTimeLeft.toFixed(1);
         }, 100);
+
+        adjustGameBoardSize();
     }
 
     function hideEmojis() {
@@ -247,11 +247,42 @@
         }
     }
 
+    function adjustGameBoardSize() {
+        const gameBoard = document.getElementById('gameBoard');
+        const infoHeight = document.getElementById('info').offsetHeight;
+        const availableHeight = window.innerHeight - infoHeight - 40; // 40 for margins
+        const availableWidth = window.innerWidth - 40; // 40 for margins
+        const gapSize = 5; // 统一的格子间隔大小
+
+        // 计算行和列的最大数量
+        const maxCells = Math.max(rows, cols);
+        const size = Math.min(availableHeight, availableWidth);
+        const cellSize = (size - (maxCells - 1) * gapSize) / maxCells;
+
+        gameBoard.style.width = `${size}px`;
+        gameBoard.style.height = `${size}px`;
+        gameBoard.style.gridGap = `${gapSize}px`;
+        gameBoard.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+        gameBoard.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
+
+        cells.forEach(cell => {
+            cell.style.width = `${cellSize}px`;
+            cell.style.height = `${cellSize}px`;
+            cell.style.fontSize = `${cellSize * 0.6}px`; // Adjust font size based on cell size
+        });
+    }
+
     function startGame() {
         updateDifficulty();
         createBoard();
         updateTime();
     }
+
+    // 窗口大小变化时调整游戏板大小
+    window.addEventListener('resize', adjustGameBoardSize);
+
+    // 初始调整游戏板大小
+    adjustGameBoardSize();
 </script>
 </body>
 </html>
