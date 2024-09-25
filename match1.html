@@ -114,19 +114,39 @@
 
     const popup = document.getElementById('popup');
     const startBtn = document.getElementById('startBtn');
+    const difficultyElement = document.getElementById('difficulty');
     // 点击开始按钮后关闭气泡窗口并开始游戏计时
     startBtn.addEventListener('click', () => {
         popup.style.display = 'none';
         startGame();
     });
     function updateDifficulty() {
-        difficulty = Math.floor(score / 10) + 1;
-        rows = 2 + Math.floor(difficulty / 5);
-        cols = 2*(1 + Math.floor(difficulty / 3));
-        maxPairs = (rows * cols) / 2;
-        memoryTime = Math.max(0.5, 4 - difficulty * 0.05);
+        difficulty = Math.floor(score / 20) + 1;
+        const totalCells = 2+ difficulty * 2;
+        let bestRows = 1;
+        let bestCols = totalCells;
+        let minDifference = totalCells;
+
+        for (let i = 1; i <= Math.sqrt(totalCells); i++) {
+            if (totalCells % i === 0) {
+                const rows = i;
+                const cols = totalCells / i;
+                const difference = Math.abs(rows - cols);
+                if (difference < minDifference) {
+                    minDifference = difference;
+                    bestRows = rows;
+                    bestCols = cols;
+                }
+            }
+        }
+
+        rows = bestRows;
+        cols = bestCols;
+        maxPairs = totalCells / 2;
+        memoryTime = Math.min(5, 0.5 + difficulty * 0.35);
         memoryTimeLeft = memoryTime;
         document.getElementById('memoryTime').textContent = memoryTimeLeft.toFixed(1);
+        difficultyElement.textContent = difficulty;
     }
 
     function createBoard() {
