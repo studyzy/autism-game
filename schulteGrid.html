@@ -13,6 +13,7 @@
             height: 100vh;
             background-color: #f0f0f0;
             font-family: Arial, sans-serif;
+            margin: 0;
         }
         h1 {
             margin: 10px;
@@ -22,13 +23,10 @@
             gap: 5px;
         }
         .grid-cell {
-            width: 60px;
-            height: 60px;
             background-color: #87CEEB;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
             cursor: pointer;
             border-radius: 10px;
         }
@@ -70,16 +68,16 @@
             background-color: #ff6347;
         }
         #timeRecords {
-    margin-top: 20px;
-    text-align: left;
-}
-#timeList {
-    list-style-type: none;
-    padding: 0;
-}
-#timeList li {
-    margin: 5px 0;
-}
+            margin-top: 20px;
+            text-align: left;
+        }
+        #timeList {
+            list-style-type: none;
+            padding: 0;
+        }
+        #timeList li {
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -109,14 +107,13 @@
     let roundTimer; // 本轮计时器
     const popup = document.getElementById('popup');
     const startBtn = document.getElementById('startBtn');
-    // 点击开始按钮后关闭气泡窗口并开始游戏计时
+    // 点击开始按钮后关闭气泡窗口���开始游戏计时
     startBtn.addEventListener('click', () => {
         popup.style.display = 'none';
         startGame();
     });
 
     let timeRecords = []; // 用时记录数组
-
 
     // 更新关卡
     function updateLevel() {
@@ -178,6 +175,7 @@
             cell.classList.add('grid-cell');
             cell.textContent = numbers[i];
             cell.dataset.number = numbers[i];
+            cell.style.fontSize = `${Math.min(gameBoard.clientWidth, gameBoard.clientHeight) / gridSize / 3}px`; // 动态调整字体大小
             cell.addEventListener('click', () => handleCellClick(cell));
             gameBoard.appendChild(cell);
         }
@@ -255,13 +253,31 @@
         roundTimer = setTimeout(updateRoundTime, 1000);
     }
 
+    // 动态调整游戏板大小
+    function adjustGameBoardSize() {
+        const gameBoard = document.getElementById('gameBoard');
+        const infoHeight = document.getElementById('info').offsetHeight;
+        const timeRecordsHeight = document.getElementById('timeRecords').offsetHeight;
+        const availableHeight = window.innerHeight - infoHeight - timeRecordsHeight - 40; // 40 for margins
+        const availableWidth = window.innerWidth - 40; // 40 for margins
+        const size = Math.min(availableHeight, availableWidth);
+        gameBoard.style.width = `${size}px`;
+        gameBoard.style.height = `${size}px`;
+    }
+
     // 开始游戏
     function startGame() {
+        adjustGameBoardSize();
         createBoard();
         updateTime();
         updateRoundTime();
     }
 
+    // 窗口大小变化时调整游戏板大小
+    window.addEventListener('resize', adjustGameBoardSize);
+
+    // 初始调整游戏板大小
+    adjustGameBoardSize();
 </script>
 </body>
 </html>
