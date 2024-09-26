@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>闪亮星星</title>
+  <link rel="stylesheet" href="css/styles.css">
   <style>
     body {
       margin: 0;
@@ -43,47 +44,77 @@
         transform: scale(1.5);
       }
     }
-    #score, #time, #difficulty {
-      color: white;
-      font-size: 20px;
-    }
-    .error-message {
-      position: absolute;
-      color: red;
-      font-size: 40px;
-      animation: fadeOut 0.5s forwards;
-    }
-    @keyframes fadeOut {
-      0% {
-        opacity: 1;
-        transform: scale(1);
-      }
-      100% {
-        opacity: 0;
-        transform: scale(2);
-      }
-    }
+
   </style>
 </head>
 <body>
 <h1>闪亮星星</h1>
+<div id="info">
 <div id="score">得分: 0</div>
 <div id="time">时间: 120</div>
 <div id="difficulty">难度: 1</div>
+</div>
 <div id="gameBoard"></div>
 
+<div class="popup" id="popup">
+  <p>欢迎来到专注力训练游戏！请在倒计时结束之前，尽快找到并点击正在闪烁的星星。点击开始按钮开始游戏。</p>
+  <button id="startBtn">开始</button>
+</div>
+<div class="popup" id="endPopup" style="display: none;">
+  <p>游戏结束！您的得分是: <span id="finalScore"></span></p>
+  <button id="exitBtn">离开</button>
+  <button id="restartBtn">再来</button>
+</div>
+<audio id="matchSound" src="assets/sounds/level-up.mp3"></audio>
+<audio id="errorSound" src="assets/sounds/error-8.mp3"></audio>
+<audio id="levelUpSound" src="assets/sounds/cute-level-up-2.mp3"></audio>
+<audio id="winningSound" src="assets/sounds/winning.mp3"></audio>
+<audio id="sparkingStarSound" src="assets/sounds/sparkling_star.mp3"></audio>
 <script>
-  const gameBoard = document.getElementById('gameBoard');
-  const scoreElement = document.getElementById('score');
-  const timeElement = document.getElementById('time');
-  const difficultyElement = document.getElementById('difficulty');
   let score = 0;
   let shiningStar = null;
-  let shiningInterval = 3000;
+  let shiningInterval = 8000;
   let timer;
   let timeLeft = 120;
   let difficulty = 1;
 
+  const gameBoard = document.getElementById('gameBoard');
+  const timeElement = document.getElementById('time');
+  const difficultyElement = document.getElementById('difficulty');
+  const sparkingStarSound = document.getElementById('sparkingStarSound');
+  const scoreElement = document.getElementById('score');
+  const popup = document.getElementById('popup');
+  const startBtn = document.getElementById('startBtn');
+  const levelUpSound = document.getElementById('levelUpSound'); // 获取音效元素
+  const matchSound = document.getElementById('matchSound'); // 获取音效元素
+  const errorSound = document.getElementById('errorSound'); // 获取音效元素
+  const winningSound = document.getElementById('winningSound'); // 获取游戏结束音效元素
+  const popSound = document.getElementById('popSound'); // 获取弹出音效元素
+  const endPopup = document.getElementById('endPopup');
+  const exitBtn = document.getElementById('exitBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  // 点击开始按钮后关闭气泡窗口并开始游戏计时
+  startBtn.addEventListener('click', () => {
+    popup.style.display = 'none';
+    startGame();
+  });
+  // 点击离开按钮跳转到index.html页面
+  exitBtn.addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+
+  // 点击重新开始重新开始游戏
+  restartBtn.addEventListener('click', () => {
+    endPopup.style.display = 'none';
+    startGame();
+  });
+    // 开始新一轮游戏
+  function createNewRound() {
+    updateDifficulty()
+    levelUpSound.play();
+    createStars(7 + difficulty*3);
+    setShiningStar();
+  }
   // 创建指定数量的星星
   function createStars(count) {
     gameBoard.innerHTML = ''; // 清空之前的星星
@@ -101,39 +132,54 @@
     }
   }
   function clickStar() {
+    const star = this;
     if (star === shiningStar) {
       score += 10;
+      levelUpSound.play();
       scoreElement.textContent = `得分: ${score}`;
       clearInterval(timer);
-      startGame(); // 新开一局
+      createNewRound(); // 新开一局
     } else {
+      const errorSoundClone = errorSound.cloneNode();
+        errorSoundClone.play();
       showErrorMessage(star);
     }
   }
 
   // 设置闪亮的星星
-  function setShiningStar() {
+  let sparkingStarSoundInterval;
+
+function setShiningStar() {
     const stars = document.querySelectorAll('.star');
     if (shiningStar) {
-      shiningStar.classList.remove('shining');
+        shiningStar.classList.remove('shining');
+        sparkingStarSound.pause();
+        sparkingStarSound.currentTime = 0;
+        clearInterval(sparkingStarSoundInterval);
     }
 
     if (stars.length > 0) {
-      const randomIndex = Math.floor(Math.random() * stars.length);
-      shiningStar = stars[randomIndex];
-      shiningStar.classList.add('shining');
-
-      timer = setTimeout(() => {
-        if (shiningStar.classList.contains('shining')) {
-          shiningStar.classList.remove('shining');
-          score -= 10;
-          scoreElement.textContent = `得分: ${score}`;
-          updateDifficulty();
-        }
-      }, shiningInterval);
+        // 随机选择一个星星闪烁
+        const randomIndex = Math.floor(Math.random() * stars.length);
+        shiningStar = stars[randomIndex];
+        shiningStar.classList.add('shining');
+        // 循环播放音效
+        sparkingStarSound.play();
+        sparkingStarSoundInterval = setInterval(() => {
+            sparkingStarSound.currentTime = 0;
+            sparkingStarSound.play();
+        }, sparkingStarSound.duration * 1000);
+        // 设置定时器, 闪烁时间结束后移除闪烁效果，减分并开始新一轮
+        timer = setTimeout(() => {
+            if (shiningStar.classList.contains('shining')) {
+                shiningStar.classList.remove('shining');
+                score -= 10;
+                scoreElement.textContent = `得分: ${score}`;
+                createNewRound();
+            }
+        }, shiningInterval);
     }
-  }
-
+}
   // 显示错误信息
   function showErrorMessage(star) {
     const errorMessage = document.createElement('div');
@@ -152,9 +198,7 @@
   function updateDifficulty() {
     difficulty = Math.max(1, Math.floor(score / 10));
     difficultyElement.textContent = `难度: ${difficulty}`;
-    shiningInterval = Math.max(1000, 3000 - difficulty * 100);
-    createStars(7 + 3 * difficulty);
-    setShiningStar(); // 确保每一局开始时都有新的闪烁星星
+    shiningInterval = Math.max(1000, 8000 - difficulty * 100);
   }
 
   // 更新剩余时间
@@ -164,8 +208,10 @@
       timeElement.textContent = `时间: ${timeLeft}`;
       setTimeout(updateTime, 1000);
     } else {
-      alert('游戏结束！您的得分是: ' + score);
-      startGame(); // 重新开始新的一局
+      winningSound.play();
+      clearInterval(sparkingStarSoundInterval);
+      document.getElementById('finalScore').textContent = score;
+      endPopup.style.display = 'block';
     }
   }
 
@@ -175,12 +221,30 @@
     timeLeft = 120;
     scoreElement.textContent = `得分: ${score}`;
     timeElement.textContent = `时间: ${timeLeft}`;
-    updateDifficulty();
-    setShiningStar();
+    createNewRound();
+    // 开始计时
     updateTime();
   }
+  function adjustGameBoardSize() {
+    const gameBoard = document.getElementById('gameBoard');
+    const infoHeight = document.getElementById('info').offsetHeight;
+    const availableHeight = window.innerHeight - infoHeight - 40; // 40 for margins
+    const availableWidth = window.innerWidth - 40; // 40 for margins
 
-  startGame();
+    // 计算行和列的最大数量
+    const maxCells = Math.max(rows, cols);
+    const size = Math.min(availableHeight, availableWidth);
+    const cellSize = (size - (maxCells - 1) * gapSize) / maxCells;
+
+    gameBoard.style.width = `${size}px`;
+    gameBoard.style.height = `${size}px`;
+    gameBoard.style.gridGap = `${gapSize}px`;
+    gameBoard.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+    gameBoard.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
+
+  }
+  // 窗口大小变化时调整游戏板大小
+  window.addEventListener('resize', adjustGameBoardSize);
 </script>
 </body>
 </html>
