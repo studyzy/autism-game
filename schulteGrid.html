@@ -4,81 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>舒尔特方格训练游戏</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-            margin: 0;
-        }
-        h1 {
-            margin: 10px;
-        }
-        #gameBoard {
-            display: grid;
-            gap: 5px;
-        }
-        .grid-cell {
-            background-color: #87CEEB;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border-radius: 10px;
-        }
-        .completed {
-            background-color: #d3d3d3;
-            cursor: default;
-        }
-        #info {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
-            border: 2px solid #87cefa;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            z-index: 1000;
-        }
-        .popup button {
-            margin-top: 20px;
-            width: 100px;
-            height: 50px;
-            font-size: 24px;
-            background-color: #ffa07a;
-            border: none;
-            border-radius: 10px;
-            box-shadow: 2px 2px 5px #888888;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .popup button:hover {
-            background-color: #ff6347;
-        }
-        #timeRecords {
-            margin-top: 20px;
-            text-align: left;
-        }
-        #timeList {
-            list-style-type: none;
-            padding: 0;
-        }
-        #timeList li {
-            margin: 5px 0;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 <h1>舒尔特方格游戏</h1>
@@ -96,6 +22,15 @@
     <p>欢迎来到舒尔特方格专注力训练游戏！请按数字大小，从小到大的点击方格。点击开始按钮开始游戏。</p>
     <button id="startBtn">开始</button>
 </div>
+<div class="popup" id="endPopup" style="display: none;">
+    <p>游戏结束！你通过了 <span id="finalLevel"></span> 关</p>
+    <ul id="finalTimeList"></ul>
+    <button id="exitBtn">离开</button>
+    <button id="restartBtn">再来</button>
+</div>
+<audio id="levelUpSound" src="assets/sounds/level-up.mp3"></audio>
+<audio id="winningSound" src="assets/sounds/winning.mp3"></audio>
+
 <script>
     let level = 1; // 当前关卡
     let correctNumber = 1; // 当前正确的数字
@@ -107,13 +42,30 @@
     let roundTimer; // 本轮计时器
     const popup = document.getElementById('popup');
     const startBtn = document.getElementById('startBtn');
-    // 点击开始按钮后关闭气泡窗口���开始游戏计时
+    const endPopup = document.getElementById('endPopup');
+    const exitBtn = document.getElementById('exitBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const levelUpSound = document.getElementById('levelUpSound'); // 获取音效元素
+    const winningSound = document.getElementById('winningSound'); // 获取游戏结束音效元素
+
+    // 点击开始按钮后关闭气泡窗口并开始游戏计时
     startBtn.addEventListener('click', () => {
         popup.style.display = 'none';
         startGame();
     });
 
-    let timeRecords = []; // 用时记录数组
+    // 点击离开按钮跳转到index.html页面
+    exitBtn.addEventListener('click', () => {
+        window.location.href = 'index.html';
+    });
+
+    // 点击重���开始按钮重新开始游戏
+    restartBtn.addEventListener('click', () => {
+        endPopup.style.display = 'none';
+        resetGame();
+    });
+
+    let timeRecords = []; // 用��记录数组
 
     // 更新关卡
     function updateLevel() {
@@ -123,7 +75,8 @@
 
         level++;
         document.getElementById('level').textContent = level;
-
+        // 播放音效
+        levelUpSound.play();
         // 根据关卡调整网格大小
         if (level % 2 === 1 && level > 2) {
             if (gridSize === 5) {
@@ -149,6 +102,18 @@
             timeList.appendChild(listItem);
         });
     }
+
+    // 更新游戏结束时的用时记录列表
+    function updateFinalTimeList() {
+        const finalTimeList = document.getElementById('finalTimeList');
+        finalTimeList.innerHTML = ''; // 清空列表
+        timeRecords.forEach((time, index) => {
+            const listItem = document.createElement('li');
+            listItem.textContent = `关卡 ${index + 1}: ${time} 秒`;
+            finalTimeList.appendChild(listItem);
+        });
+    }
+
     let remainingNumbers = []; // 用于存储剩余的数字
 
     // 创建游戏板
@@ -242,7 +207,10 @@
             document.getElementById('time').textContent = timeLeft;
             setTimeout(updateTime, 1000);
         } else {
-            alert('游戏结束！你通过了 ' + level + ' 关');
+            winningSound.play();
+            document.getElementById('finalLevel').textContent = level;
+            updateFinalTimeList();
+            endPopup.style.display = 'block';
         }
     }
 
@@ -271,6 +239,21 @@
         createBoard();
         updateTime();
         updateRoundTime();
+    }
+
+    // 重置游戏
+    function resetGame() {
+        level = 1;
+        correctNumber = 1;
+        gridSize = 3;
+        timeLeft = 120;
+        roundTime = 0;
+        timeRecords = [];
+        document.getElementById('level').textContent = level;
+        document.getElementById('time').textContent = timeLeft;
+        document.getElementById('roundTime').textContent = roundTime;
+        updateTimeList();
+        startGame();
     }
 
     // 窗口大小变化时调整游戏板大小

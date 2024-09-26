@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>闪亮星星</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #000;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    h1 {
+      color: #fff;
+      margin: 10px;
+    }
+    #gameBoard {
+      position: relative;
+      width: 80vw;
+      height: 80vh;
+      background-color: #000;
+      border: 2px solid #fff;
+    }
+    .star {
+      position: absolute;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .shining {
+      animation: pulsate 1s infinite alternate;
+    }
+    @keyframes pulsate {
+      from {
+        transform: scale(1);
+      }
+      to {
+        transform: scale(1.5);
+      }
+    }
+    #score, #time, #difficulty {
+      color: white;
+      font-size: 20px;
+    }
+    .error-message {
+      position: absolute;
+      color: red;
+      font-size: 40px;
+      animation: fadeOut 0.5s forwards;
+    }
+    @keyframes fadeOut {
+      0% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(2);
+      }
+    }
+  </style>
+</head>
+<body>
+<h1>闪亮星星</h1>
+<div id="score">得分: 0</div>
+<div id="time">时间: 120</div>
+<div id="difficulty">难度: 1</div>
+<div id="gameBoard"></div>
+
+<script>
+  const gameBoard = document.getElementById('gameBoard');
+  const scoreElement = document.getElementById('score');
+  const timeElement = document.getElementById('time');
+  const difficultyElement = document.getElementById('difficulty');
+  let score = 0;
+  let shiningStar = null;
+  let shiningInterval = 3000;
+  let timer;
+  let timeLeft = 120;
+  let difficulty = 1;
+
+  // 创建指定数量的星星
+  function createStars(count) {
+    gameBoard.innerHTML = ''; // 清空之前的星星
+    for (let i = 0; i < count; i++) {
+      const star = document.createElement('div');
+      star.classList.add('star');
+      star.textContent = '⭐️';
+      star.style.top = `${Math.random() * 95}%`;
+      star.style.left = `${Math.random() * 99}%`;
+
+      // 星星点击事件
+      star.addEventListener('click', clickStar);
+
+      gameBoard.appendChild(star);
+    }
+  }
+  function clickStar() {
+    if (star === shiningStar) {
+      score += 10;
+      scoreElement.textContent = `得分: ${score}`;
+      clearInterval(timer);
+      startGame(); // 新开一局
+    } else {
+      showErrorMessage(star);
+    }
+  }
+
+  // 设置闪亮的星星
+  function setShiningStar() {
+    const stars = document.querySelectorAll('.star');
+    if (shiningStar) {
+      shiningStar.classList.remove('shining');
+    }
+
+    if (stars.length > 0) {
+      const randomIndex = Math.floor(Math.random() * stars.length);
+      shiningStar = stars[randomIndex];
+      shiningStar.classList.add('shining');
+
+      timer = setTimeout(() => {
+        if (shiningStar.classList.contains('shining')) {
+          shiningStar.classList.remove('shining');
+          score -= 10;
+          scoreElement.textContent = `得分: ${score}`;
+          updateDifficulty();
+        }
+      }, shiningInterval);
+    }
+  }
+
+  // 显示错误信息
+  function showErrorMessage(star) {
+    const errorMessage = document.createElement('div');
+    errorMessage.classList.add('error-message');
+    errorMessage.textContent = '-10';
+    errorMessage.style.top = star.style.top;
+    errorMessage.style.left = star.style.left;
+    gameBoard.appendChild(errorMessage);
+
+    setTimeout(() => {
+      gameBoard.removeChild(errorMessage);
+    }, 500);
+  }
+
+  // 更新难度
+  function updateDifficulty() {
+    difficulty = Math.max(1, Math.floor(score / 10));
+    difficultyElement.textContent = `难度: ${difficulty}`;
+    shiningInterval = Math.max(1000, 3000 - difficulty * 100);
+    createStars(7 + 3 * difficulty);
+    setShiningStar(); // 确保每一局开始时都有新的闪烁星星
+  }
+
+  // 更新剩余时间
+  function updateTime() {
+    if (timeLeft > 0) {
+      timeLeft--;
+      timeElement.textContent = `时间: ${timeLeft}`;
+      setTimeout(updateTime, 1000);
+    } else {
+      alert('游戏结束！您的得分是: ' + score);
+      startGame(); // 重新开始新的一局
+    }
+  }
+
+  // 开始游戏
+  function startGame() {
+    score = 0;
+    timeLeft = 120;
+    scoreElement.textContent = `得分: ${score}`;
+    timeElement.textContent = `时间: ${timeLeft}`;
+    updateDifficulty();
+    setShiningStar();
+    updateTime();
+  }
+
+  startGame();
+</script>
+</body>
+</html>

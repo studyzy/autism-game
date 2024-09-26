@@ -1,0 +1,74 @@
+/* styles.css */
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+    font-family: Arial, sans-serif;
+    margin: 0;
+}
+h1 {
+    margin: 10px;
+}
+#gameBoard {
+    display: grid;
+    gap: 5px;
+}
+.grid-cell {
+    background-color: #87CEEB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 10px;
+}
+.completed {
+    background-color: #d3d3d3;
+    cursor: default;
+}
+#info {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+.popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border: 2px solid #87cefa;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    z-index: 1000;
+}
+.popup button {
+    margin-top: 20px;
+    width: 100px;
+    height: 50px;
+    font-size: 24px;
+    background-color: #ffa07a;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 2px 2px 5px #888888;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.popup button:hover {
+    background-color: #ff6347;
+}
+#timeRecords {
+    margin-top: 20px;
+    text-align: left;
+}
+#timeList {
+    list-style-type: none;
+    padding: 0;
+}
+#timeList li {
+    margin: 5px 0;
+}
