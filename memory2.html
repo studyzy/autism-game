@@ -4,127 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>专注力与记忆力训练游戏</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
-        }
-        h1 {
-            margin: 10px;
-        }
-        #info {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        #gameBoard {
-            display: grid;
-            gap: 5px;
-        }
-        .grid-cell {
-            width: 60px;
-            height: 60px;
-            background-color: #9acd32;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-            border-radius: 10px;
-        }
-        .highlighted {
-            background-color: #ff6347;
-        }
-        .wrong {
-            background-color: #ff0000;
-            color: white;
-            font-size: 32px;
-        }
-        #scoreBoard {
-            margin-top: 20px;
-        }
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-        }
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider {
-            background-color: #2196F3;
-        }
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-        .popup {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
-            border: 2px solid #87cefa;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            z-index: 1000;
-        }
-        .popup button {
-            margin-top: 20px;
-            width: 100px;
-            height: 50px;
-            font-size: 24px;
-            background-color: #ffa07a;
-            border: none;
-            border-radius: 10px;
-            box-shadow: 2px 2px 5px #888888;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .popup button:hover {
-            background-color: #ff6347;
-        }
-        #score {
-            display: inline-block;
-            transition: transform 0.8s;
-            transform-style: preserve-3d;
-        }
+    <link rel="stylesheet" href="css/styles.css">
 
-        #score.flip {
-            transform: rotateX(90deg);
-        }
-    </style>
 </head>
 <body>
 <h1>记忆训练游戏</h1>
@@ -143,15 +24,24 @@
 <div id="gameBoard"></div>
 <div id="scoreBoard"></div>
 
-<!-- 新增的气泡窗口 -->
 <div class="popup" id="popup">
     <p>欢迎来到记忆训练游戏！请记住格子的亮起的顺序和位置，并在记忆时间结束后按顺序点击正确的格子。点击开始按钮开始游戏。</p>
     <button id="startBtn">开始</button>
 </div>
-<!-- 新增的失败气泡窗口 -->
+<!-- 失败气泡窗口 -->
 <div class="popup" id="failPopup" style="display: none">
     <p>😭 很遗憾，答错了，请继续加油💪🏻</p>
 </div>
+<div class="popup" id="endPopup" style="display: none;">
+    <p>游戏结束！您的得分是: <span id="finalScore"></span></p>
+    <button id="exitBtn">离开</button>
+    <button id="restartBtn">再来</button>
+</div>
+<audio id="matchSound" src="assets/sounds/level-up.mp3"></audio>
+<audio id="errorSound" src="assets/sounds/error-8.mp3"></audio>
+<audio id="levelUpSound" src="assets/sounds/cute-level-up-2.mp3"></audio>
+<audio id="winningSound" src="assets/sounds/winning.mp3"></audio>
+<audio id="popSound" src="assets/sounds/pop.mp3"></audio>
 <script>
     let totalTime = 120;
     let timeLeft = totalTime;
@@ -169,6 +59,25 @@
     const popup = document.getElementById('popup');
     const startBtn = document.getElementById('startBtn');
     const failPopup = document.getElementById('failPopup');
+    const levelUpSound = document.getElementById('levelUpSound'); // 获取音效元素
+    const matchSound = document.getElementById('matchSound'); // 获取音效元素
+    const errorSound = document.getElementById('errorSound'); // 获取音效元素
+    const winningSound = document.getElementById('winningSound'); // 获取游戏结束音效元素
+    const popSound = document.getElementById('popSound'); // 获取弹出音效元素
+    const endPopup = document.getElementById('endPopup');
+    const exitBtn = document.getElementById('exitBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    // 点击离开按钮跳转到index.html页面
+    exitBtn.addEventListener('click', () => {
+        window.location.href = 'index.html';
+    });
+
+    // 点击重新开始重新开始游戏
+    restartBtn.addEventListener('click', () => {
+        endPopup.style.display = 'none';
+        resetGame();
+    });
     // 更新得分
     function updateScore(newScore) {
         // 触发翻牌动画
@@ -205,8 +114,32 @@
             gameBoard.appendChild(cell);
             cells.push(cell);
         }
+        adjustGameBoardSize();
     }
+    function adjustGameBoardSize() {
+        const gameBoard = document.getElementById('gameBoard');
+        const infoHeight = document.getElementById('info').offsetHeight;
+        const availableHeight = window.innerHeight - infoHeight - 40; // 40 for margins
+        const availableWidth = window.innerWidth - 40; // 40 for margins
+        const gapSize = 5; // 统一的格子间隔大小
 
+        // 计算行和列的最大数量
+        const maxCells = Math.max(rows, cols);
+        const size = Math.min(availableHeight, availableWidth);
+        const cellSize = (size - (maxCells - 1) * gapSize) / maxCells;
+
+        gameBoard.style.width = `${size}px`;
+        gameBoard.style.height = `${size}px`;
+        gameBoard.style.gridGap = `${gapSize}px`;
+        gameBoard.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
+        gameBoard.style.gridTemplateRows = `repeat(${rows}, ${cellSize}px)`;
+
+        cells.forEach(cell => {
+            cell.style.width = `${cellSize}px`;
+            cell.style.height = `${cellSize}px`;
+            cell.style.fontSize = `${cellSize * 0.6}px`; // Adjust font size based on cell size
+        });
+    }
     let userSequence = [];
     let currentHighlightIndex = 0;
 
@@ -233,6 +166,8 @@
         if (currentHighlightIndex < highlightedCells.length) {
             const index = highlightedCells[currentHighlightIndex];
             cells[index].classList.add('highlighted');
+            const highlightSoundClone = popSound.cloneNode();
+            highlightSoundClone.play();
             setTimeout(() => {
                 cells[index].classList.remove('highlighted');
                 currentHighlightIndex++;
@@ -258,6 +193,8 @@
         if (highlightedCells[userSequence.length] === index) {
             cells[index].classList.add('highlighted');
             userSequence.push(index);
+            const matchSoundClone = matchSound.cloneNode();
+            matchSoundClone.play();
             if (userSequence.length === highlightedCells.length) {
                 score += 10;
                 updateScore(score);
@@ -271,6 +208,8 @@
             setTimeout(() => {
                 cells[index].classList.remove('wrong');
             }, 1000);
+            const errorSoundClone = errorSound.cloneNode();
+            errorSoundClone.play();
             attempts++;
             if (attempts === maxAttempts) {
                 score -= 10;
@@ -290,6 +229,7 @@
     function resetBoard() {
         attempts = 0;
         updateDifficulty();
+        levelUpSound.play();
         createBoard();
         highlightRandomCells();
     }
@@ -301,7 +241,9 @@
             document.getElementById('time').textContent = timeLeft;
             setTimeout(updateTime, 1000);
         } else {
-            alert('游戏结束！您的得分是: ' + score);
+            winningSound.play();
+            document.getElementById('finalScore').textContent = score;
+            endPopup.style.display = 'block';
         }
     }
 
@@ -312,7 +254,13 @@
         highlightRandomCells();
         updateTime();
     }
-
+    function resetGame() {
+        timeLeft = totalTime;
+        score = 0;
+        document.getElementById('time').textContent = timeLeft;
+        document.getElementById('score').textContent = score;
+        startGame();
+    }
     // 监听开关变化，重新创建游戏板
     document.getElementById('showNumbers').addEventListener('change', createBoard);
 
@@ -321,6 +269,9 @@
         popup.style.display = 'none';
         startGame();
     });
+    // 窗口大小变化时调整游戏板大小
+    window.addEventListener('resize', adjustGameBoardSize);
+
 </script>
 </body>
 </html>
