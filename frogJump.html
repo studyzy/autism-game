@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frog Jump Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f8ff;
+        }
+        canvas {
+            border: 2px solid #000;
+        }
+        #gameArea {
+            position: relative;
+        }
+        #jumpButton {
+            position: absolute;
+            top: 300px;
+            left: 150px;
+            padding: 10px 20px;
+            font-size: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="gameArea">
+    <canvas id="gameCanvas" width="500" height="400"></canvas>
+    <button id="jumpButton">Jump</button>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const jumpButton = document.getElementById('jumpButton');
+
+    const frogImage = new Image();
+    frogImage.src = 'images/frog-jump.jpg';
+
+    let frogX = 50;
+    let frogY = 250;
+    let jumping = false;
+    let currentFrame = 0;
+
+    // Adjust frog frames based on the actual image size (400x967 for each frame)
+    const frogFrames = [
+        { x: 0, y: 0, width: 400, height: 967 },
+        { x: 400, y: 0, width: 400, height: 967 },
+        { x: 800, y: 0, width: 400, height: 967 },
+        { x: 1200, y: 0, width: 400, height: 967 },
+        { x: 1600, y: 0, width: 400, height: 967 }
+    ];
+
+    function drawGrid() {
+        // Draw left box
+        ctx.strokeStyle = "#000";
+        ctx.strokeRect(50, 250, 150, 150);
+        // Draw right box
+        ctx.strokeRect(300, 250, 150, 150);
+    }
+
+    function drawFrog() {
+        const frame = frogFrames[currentFrame];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+        // Scale the frog to fit the canvas size (e.g., 150x150)
+        ctx.drawImage(frogImage, frame.x, frame.y, frame.width, frame.height, frogX, frogY, 150, 150);
+    }
+
+    function jump() {
+        if (jumping) return;
+        jumping = true;
+
+        let jumpHeight = 100;
+        let jumpSpeed = 20;
+        let direction = 1;
+
+        const jumpInterval = setInterval(() => {
+            if (frogX >= 300) {
+                clearInterval(jumpInterval);
+                jumping = false;
+                currentFrame = 0;
+                drawFrog();
+                return;
+            }
+
+            if (jumpHeight <= 0) {
+                direction = -1;
+            }
+
+            frogX += jumpSpeed * direction;
+            frogY -= jumpHeight * direction;
+
+            currentFrame = (currentFrame + 1) % frogFrames.length;
+            drawFrog();
+        }, 100);
+    }
+
+    jumpButton.addEventListener('click', jump);
+
+    frogImage.onload = () => {
+        drawFrog();
+    };
+
+</script>
+
+</body>
+</html>
