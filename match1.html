@@ -272,7 +272,22 @@
         createBoard();
         updateTime();
     }
-
+    function resetGame() {
+        score = 0;
+        timeLeft = totalTime;
+        difficulty = 1;
+        rows = 2;
+        cols = 2;
+        matchedCells = 0;
+        memoryTimeLeft = memoryTime;
+        document.getElementById('score').textContent = score;
+        document.getElementById('time').textContent = timeLeft;
+        document.getElementById('memoryTime').textContent = memoryTimeLeft.toFixed(1);
+        document.getElementById('difficulty').textContent = difficulty;
+        updateDifficulty();
+        createBoard();
+        updateTime();
+    }
     // 窗口大小变化时调整游戏板大小
     window.addEventListener('resize', adjustGameBoardSize);
 
