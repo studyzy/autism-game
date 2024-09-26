@@ -209,6 +209,7 @@ function setShiningStar() {
       setTimeout(updateTime, 1000);
     } else {
       winningSound.play();
+      clearInterval(timer);
       clearInterval(sparkingStarSoundInterval);
       document.getElementById('finalScore').textContent = score;
       endPopup.style.display = 'block';
