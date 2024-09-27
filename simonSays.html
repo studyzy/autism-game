@@ -27,6 +27,11 @@
             font-size: 24px;
             margin-bottom: 10px;
         }
+        #command {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: blue;
+        }
         #boy {
             position: relative;
             width: 800px;
@@ -83,10 +88,11 @@
 </head>
 <body>
 <div id="info">
-<div id="score">得分: 0</div>
-<div id="total-timer">总时间: 120.0</div>
-<div id="round-timer">本轮时间: 5.0</div>
+    <div id="score">得分: 0</div>
+    <div id="total-timer">总时间: 120.0</div>
+    <div id="round-timer">本轮时间: 5.0</div>
 </div>
+<div id="command">指令将显示在这里</div>
 <div id="boy">
     <div id="eyes" class="part" data-index="0"></div>
     <div id="nose" class="part" data-index="1"></div>
@@ -98,10 +104,11 @@
     <p>欢迎来到西蒙说游戏！请打开声音，并按照语音指令点击相应的部位。如果指令前有“西蒙说”，则点击正确部位得分，否则扣分，如果指令前没有“西蒙说”，则不要点击任何部位。点击开始按钮开始游戏。</p>
     <button id="startBtn">开始</button>
 </div>
- <script>
+<script>
     const scoreElement = document.getElementById('score');
     const totalTimerElement = document.getElementById('total-timer');
     const roundTimerElement = document.getElementById('round-timer');
+    const commandElement = document.getElementById('command');
     const popup = document.getElementById('popup');
     const startBtn = document.getElementById('startBtn');
     let score = 0;
@@ -122,7 +129,8 @@
         simonSays = Math.random() < 0.5; // 50% 的概率生成“西蒙说”
         const commandObj = getRandomCommand();
         currentCommandIndex = commandObj.index;
-        const commandText = simonSays ? `西蒙说，${commandObj.command}` : commandObj.command;
+        const commandText = simonSays ? `西蒙说：${commandObj.command}` : commandObj.command;
+        commandElement.textContent = commandText; // 更新指令显示
         speak(commandText);
         startRoundTimer();
     }
@@ -180,7 +188,7 @@
         roundTimer = setInterval(() => {
             roundTimeLeft -= 0.1;
             if (roundTimeLeft < 0) {
-               roundTimeLeft=0;
+                roundTimeLeft = 0;
             }
             roundTimerElement.textContent = `本轮时间: ${roundTimeLeft.toFixed(1)}`;
             if (roundTimeLeft <= 0) {
