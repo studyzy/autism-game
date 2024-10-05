@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>手势识别游戏</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+
+    #handImage {
+      width: 300px; /* 设置宽度 */
+      height: 300px; /* 设置高度 */
+      border-radius: 50%; /* 设置圆形 */
+      object-fit: cover; /* 确保图片填充整个区域 */
+      transition: transform 0s;
+
+    }
+    .flip {
+      transform: rotateY(180deg);
+    }
+    @keyframes rotateClockwise {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes rotateCounterclockwise {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(-360deg);
+    }
+}
+
+.clockwise {
+    animation: rotateClockwise 4s linear infinite;
+}
+
+.counterclockwise {
+    animation: rotateCounterclockwise 4s linear infinite;
+}
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+    }
+    .control-btn {
+      width: 100px;
+      height: 100px;
+      font-size: 40px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .control-btn:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+
+<h1>手势识别游戏</h1>
+<div id="info">
+  <p>得分: <span id="score">0</span></p>
+  <p>剩余时间: <span id="time">120</span> 秒</p>
+</div>
+<div id="gameBoard">
+  <img id="handImage" src="" alt="Hand Image">
+</div>
+
+<div id="controls">
+  <button id="leftButton" class="control-btn">←</button>
+  <button id="rightButton" class="control-btn">→</button>
+</div>
+<div class="popup" id="popup">
+  <p>欢迎来到左右手识别训练游戏！请判断图片显示的是左手还是右手选择按下对应的按钮。点击开始按钮开始游戏。</p>
+  <button id="startBtn">开始</button>
+</div>
+<div class="popup" id="endPopup" style="display: none;">
+  <p>游戏结束！你的得分是： <span id="finalScore"></span> 分</p>
+  <button id="exitBtn">离开</button>
+  <button id="restartBtn">再来</button>
+</div>
+<audio id="matchSound" src="assets/sounds/level-up.mp3"></audio>
+<audio id="errorSound" src="assets/sounds/error-8.mp3"></audio>
+<audio id="levelUpSound" src="assets/sounds/cute-level-up-2.mp3"></audio>
+<audio id="winningSound" src="assets/sounds/winning.mp3"></audio>
+
+<script>
+  const scoreElement = document.getElementById('score');
+  const timeElement = document.getElementById('time');
+  const handImage = document.getElementById('handImage');
+  const leftButton = document.getElementById('leftButton');
+  const rightButton = document.getElementById('rightButton');
+  const popup = document.getElementById('popup');
+  const startBtn = document.getElementById('startBtn');
+  const endPopup = document.getElementById('endPopup');
+  const exitBtn = document.getElementById('exitBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const matchSound = document.getElementById('matchSound');
+  const errorSound = document.getElementById('errorSound');
+  const winningSound = document.getElementById('winningSound');
+  let score = 0;
+  let timeLeft = 120;
+  const maxX = 11;
+  let gameInterval;
+  let lastIndex = -1;
+
+  // 初始化游戏
+  function startGame() {
+    score = 0;
+    timeLeft = 120;
+    scoreElement.textContent = `${score}`;
+    timeElement.textContent = ` ${timeLeft}`;
+    randomizeImage();
+    gameInterval = setInterval(updateTimer, 1000); // 每秒更新一次计时器
+  }
+
+  // 更新剩余时间
+  function updateTimer() {
+    timeLeft--;
+    timeElement.textContent = `${timeLeft}`;
+    if (timeLeft <= 0) {
+      clearInterval(gameInterval);
+      winningSound.play();
+      document.getElementById('finalScore').textContent = score;
+      endPopup.style.display = 'block';
+    }
+  }
+
+  // 随机显示一个手势图片
+  function randomizeImage() {
+    let randomIndex;
+    do {
+        randomIndex = Math.floor(Math.random() * (maxX + 1));
+    } while (randomIndex === lastIndex);
+    lastIndex = randomIndex;
+    handImage.src = `images/hand${randomIndex}.jpg`;
+    console.log(randomIndex);
+    if (score >= 200) {
+        const randomDirection = Math.random() < 0.5 ? 'clockwise' : 'counterclockwise';
+        handImage.classList.add(randomDirection);
+    } else if (score >= 100) {
+        const randomRotation = Math.floor(Math.random() * 361);
+        handImage.style.transform = `rotate(${randomRotation}deg)`;
+    } else {
+        handImage.style.transform = 'rotate(0deg)';
+    }
+}
+
+  // 点击左按钮
+  leftButton.addEventListener('click', () => {
+    handleUserChoice('left');
+  });
+
+  // 点击右按钮
+  rightButton.addEventListener('click', () => {
+    handleUserChoice('right');
+  });
+
+  // 处理用户点击
+   function handleUserChoice(choice) {
+    const correctAnswer = lastIndex % 2 === 0 ? 'right' : 'left';
+    if (choice === correctAnswer) {
+        score += 10;
+        const matchSoundClone = matchSound.cloneNode();
+        matchSoundClone.play();
+    } else {
+        score -= 10;
+        const errorSoundClone = errorSound.cloneNode();
+        errorSoundClone.play();
+    }
+    scoreElement.textContent = `${score}`;
+     handImage.classList.remove('clockwise', 'counterclockwise');
+     randomizeImage();
+}
+
+  // 重置游戏
+  function resetGame() {
+    clearInterval(gameInterval);
+    handImage.src = '';
+    scoreElement.textContent = `0`;
+    timeElement.textContent = `120`;
+  }
+
+  // 点击开始按钮后关闭气泡窗口并开始游戏计时
+  startBtn.addEventListener('click', () => {
+    popup.style.display = 'none';
+    startGame();
+  });
+
+  // 点击离开按钮跳转到index.html页面
+  exitBtn.addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+
+  // 点击重新开始按钮重新开始游戏
+  restartBtn.addEventListener('click', () => {
+    endPopup.style.display = 'none';
+    resetGame();
+    startGame();
+  });
+
+</script>
+</body>
+</html>

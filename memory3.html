@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>瞬时记忆游戏</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        h1, #info {
+            margin: 10px;
+            font-size: 24px;
+        }
+        #gameBoard {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        #emojiDisplay {
+            font-size: 20vw; /* 大图占据屏幕宽度的20% */
+        }
+        #options {
+            display: flex;
+            justify-content: space-around;
+            width: 90%; /* 选项图占据屏幕宽度的90% */
+            margin-top: 20px;
+        }
+        .option {
+            font-size: 10vw; /* 选项图占据屏幕宽度的10% */
+            cursor: pointer;
+            padding: 10px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        .option:hover {
+            background-color: #d0d0d0;
+        }
+        @media (min-width: 768px) {
+            #emojiDisplay {
+                font-size: 30vw; /* 大图占据屏幕宽度的15% */
+            }
+            .option {
+                font-size: 10vw; /* 选项图占据屏幕宽度的7.5% */
+            }
+        }
+        @media (min-width: 1024px) {
+            #emojiDisplay {
+                font-size: 30vw; /* 大图占据屏幕宽度的10% */
+            }
+            .option {
+                font-size: 12vw; /* 选项图占据屏幕宽度的5% */
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>瞬时记忆游戏</h1>
+<div id="info">
+    <p>剩余时间: <span id="time">120</span> 秒</p>
+    <p>总得分: <span id="score">0</span></p>
+</div>
+
+<div id="gameBoard">
+    <div id="emojiDisplay">😊</div>
+    <div id="options">
+        <!-- 选项按钮 -->
+        <div class="option" id="option1"></div>
+        <div class="option" id="option2"></div>
+        <div class="option" id="option3"></div>
+        <div class="option" id="option4"></div>
+    </div>
+</div>
+
+<div class="popup" id="popup">
+    <p>欢迎来到记忆训练游戏！请记住出现的大图，并在下一轮的4个选项中找到这个图。点击开始按钮开始游戏。</p>
+    <button id="startBtn">开始</button>
+</div>
+<div class="popup" id="endPopup" style="display: none;">
+    <p>游戏结束！您的得分是: <span id="finalScore"></span></p>
+    <button id="exitBtn">离开</button>
+    <button id="restartBtn">再来</button>
+</div>
+<audio id="matchSound" src="assets/sounds/level-up.mp3"></audio>
+<audio id="errorSound" src="assets/sounds/error-8.mp3"></audio>
+<audio id="levelUpSound" src="assets/sounds/cute-level-up-2.mp3"></audio>
+<audio id="winningSound" src="assets/sounds/winning.mp3"></audio>
+
+<script>
+    const emojiList = ["😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊", "😋", "😎", "😍", "😘", "🥰",
+        "😗", "😙", "😚", "🙂", "🤗", "🤩", "🤔", "🤨", "😐", "😑", "😶", "🙄", "😏", "😣", "😥",
+        "😮", "🤐", "😯", "😪", "😫", "🥱", "😴", "😌", "😛", "😜", "🤪", "😝", "🤑", "🤤", "😓",
+        "😔", "😕", "🙃", "🧐", "🤓", "😤", "😠", "😡", "🤬", "😈", "👿", "💀", "☠", "👻", "👽",
+        "👾", "🤖", "😺", "😸", "😹", "😻", "😼", "😽", "🙀", "😿", "😾", "🙈", "🙉", "🙊", "💋",
+        "💌", "💘", "💝", "💖", "💗", "💓", "💞", "💕", "💟", "❣", "💔", "💯", "💢", "💥", "💫",
+        "💦", "💨", "🕳", "💣", "💬", "👁", "👀", "👂", "👃", "👅", "👄", "🧠", "👤", "👥", "🗣","🇨🇳"];
+
+    let score = 0;
+    let timeLeft = 120;
+    let gameInterval;
+    let previousEmoji;
+    let currentEmoji;
+    const scoreElement = document.getElementById('score');
+    const timeElement = document.getElementById('time');
+    const emojiDisplay = document.getElementById('emojiDisplay');
+    const optionElements = [document.getElementById('option1'), document.getElementById('option2'), document.getElementById('option3'), document.getElementById('option4')];
+    const matchSound = document.getElementById('matchSound');
+    const errorSound = document.getElementById('errorSound');
+    const levelUpSound = document.getElementById('levelUpSound');
+    const winningSound = document.getElementById('winningSound');
+    function startGame() {
+        score = 0;
+        timeLeft = 120;
+        scoreElement.textContent = `${score}`;
+        timeElement.textContent = `${timeLeft}`;
+        currentEmoji = getRandomEmoji();
+        emojiDisplay.textContent = currentEmoji;
+        setTimeout(nextRound, 2000);
+        gameInterval = setInterval(updateTimer, 1000);
+    }
+
+    function updateTimer() {
+        timeLeft--;
+        timeElement.textContent = `${timeLeft}`;
+        if (timeLeft <= 0) {
+            clearInterval(gameInterval);
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('endPopup').style.display = 'block';
+            winningSound.play();
+        }
+    }
+
+    function getRandomEmoji() {
+        const randomIndex = Math.floor(Math.random() * emojiList.length);
+        return emojiList[randomIndex];
+    }
+
+    function nextRound() {
+        previousEmoji = currentEmoji;
+        currentEmoji = getRandomEmoji();
+        emojiDisplay.textContent = currentEmoji;
+
+        const correctOptionIndex = Math.floor(Math.random() * 4);
+        optionElements.forEach((option, index) => {
+            if (index === correctOptionIndex) {
+                option.textContent = previousEmoji;
+            } else {
+                let randomEmoji;
+                do {
+                    randomEmoji = getRandomEmoji();
+                } while (randomEmoji === previousEmoji || randomEmoji === currentEmoji);
+                option.textContent = randomEmoji;
+            }
+        });
+
+        optionElements.forEach(option => {
+            option.onclick = handleOptionClick;
+        });
+    }
+
+    function handleOptionClick(event) {
+        const chosenEmoji = event.target.textContent;
+        if (chosenEmoji === previousEmoji) {
+            score += 10;
+            const matchSoundClone = matchSound.cloneNode();
+            matchSoundClone.play();
+        } else {
+            score -= 10;
+            const errorSoundClone = errorSound.cloneNode();
+            errorSoundClone.play();
+        }
+        scoreElement.textContent = `${score}`;
+        nextRound();
+    }
+
+    function resetGame() {
+        clearInterval(gameInterval);
+        emojiDisplay.textContent = '';
+        optionElements.forEach(option => {
+            option.textContent = '';
+        });
+        scoreElement.textContent = `0`;
+        timeElement.textContent = `120`;
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+        document.getElementById('popup').style.display = 'none';
+        startGame();
+    });
+
+    document.getElementById('exitBtn').addEventListener('click', () => {
+        window.location.href = 'index.html';
+    });
+
+    document.getElementById('restartBtn').addEventListener('click', () => {
+        document.getElementById('endPopup').style.display = 'none';
+        resetGame();
+    });
+</script>
+
+</body>
+</html>
