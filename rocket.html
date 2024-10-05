@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>火箭击毁飞机</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #87CEEB;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: #87CEEB;
+        }
+        #rocket {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            width: 50px;
+            height: 100px;
+            background-image: url('images/rocket.png'); /* 添加火箭图片 */
+            background-size: cover;
+            transform: translateX(-50%);
+        }
+        .plane {
+            position: absolute;
+            width: 100px;
+            height: 60px;
+            background-size: cover;
+        }
+        .plane.flipped {
+            transform: scaleX(-1); /* 水平翻转 */
+        }
+        .explosion {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background-image: url('images/bang.png');
+            background-size: cover;
+            pointer-events: none; /* Prevent interaction */
+        }
+        #score, #time {
+            position: absolute;
+            top: 10px;
+            font-size: 24px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+        #score {
+            left: 10px;
+        }
+        #time {
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="gameCanvas">
+    <div id="rocket"></div>
+    <div id="score">得分: 0</div>
+    <div id="time">剩余时间: 120秒</div>
+</div>
+<audio id="rocketSound" src="assets/sounds/rocket.mp3"></audio>
+<audio id="bangSound" src="assets/sounds/bang.mp3"></audio>
+
+<script>
+    // 定义游戏变量
+    const rocket = document.getElementById('rocket');
+    const gameCanvas = document.getElementById('gameCanvas');
+    const scoreElement = document.getElementById('score');
+    const timeElement = document.getElementById('time');
+    const rocketSound = document.getElementById('rocketSound');
+    const bangSound = document.getElementById('bangSound');
+    let score = 0;
+    let timeLeft = 120;
+    let isRocketMoving = false;
+    let rocketSpeed = 5; // 火箭的固定上升速度
+    let planes = [];
+    let planeSpeedMin = 2;
+    let planeSpeedMax = 6;
+    let gameInterval;
+    let planeInterval;
+
+    // 开始游戏
+    function startGame() {
+        score = 0;
+        timeLeft = 120;
+        scoreElement.textContent = `得分: ${score}`;
+        timeElement.textContent = `剩余时间: ${timeLeft}秒`;
+        gameInterval = setInterval(updateTimer, 1000); // 每秒更新一次计时器
+        planeInterval = setInterval(generatePlane, 2000); // 每1.5秒生成一个飞机
+        gameCanvas.addEventListener('touchstart', launchRocket);
+        gameCanvas.addEventListener('click', launchRocket);
+
+    }
+
+    // 更新计时器
+    function updateTimer() {
+        timeLeft--;
+        timeElement.textContent = `剩余时间: ${timeLeft}秒`;
+        if (timeLeft <= 0) {
+            clearInterval(gameInterval);
+            clearInterval(planeInterval);
+            alert(`游戏结束！你的最终得分是: ${score}`);
+            resetGame();
+        }
+    }
+
+    // 生成随机的飞机
+    function generatePlane() {
+        const plane = document.createElement('div');
+        plane.classList.add('plane');
+        const isLeft = Math.random() < 0.5; // 随机决定从左边还是右边飞进屏幕
+        plane.style.top = `${Math.random() * (gameCanvas.clientHeight - 300)}px`;
+        plane.style.left = isLeft ? '-100px' : `${gameCanvas.clientWidth}px`;
+        const planeSpeed = Math.random() * (planeSpeedMax - planeSpeedMin) + planeSpeedMin; // 随机速度
+        plane.dataset.speed = planeSpeed;
+        plane.dataset.isLeft = isLeft;
+
+        // 随机决定飞机是敌方还是我方，敌方飞机出现概率为80%
+        const isEnemy = Math.random() < 0.8;
+        plane.dataset.isEnemy = isEnemy;
+        plane.style.backgroundImage = isEnemy ? "url('images/plane1.png')" : "url('images/plane2.png')";
+
+        // 如果飞机从右往左飞，则翻转图片
+        if (!isLeft) {
+            plane.classList.add('flipped');
+        }
+
+        planes.push(plane);
+        gameCanvas.appendChild(plane);
+
+        // 飞机移动
+        movePlane(plane);
+    }
+
+    // 飞机移动函数
+    function movePlane(plane) {
+        const planeMove = setInterval(() => {
+            let currentLeft = parseFloat(plane.style.left);
+            const speed = parseFloat(plane.dataset.speed);
+            const isLeft = plane.dataset.isLeft === 'true';
+
+            if (isLeft) {
+                plane.style.left = `${currentLeft + speed}px`;
+            } else {
+                plane.style.left = `${currentLeft - speed}px`;
+            }
+
+            // 如果飞机飞出了屏幕，移除飞机
+            if (currentLeft > gameCanvas.clientWidth || currentLeft < -100) {
+                clearInterval(planeMove);
+                gameCanvas.removeChild(plane);
+                planes = planes.filter(p => p !== plane);
+            }
+        }, 20);
+    }
+
+    // 发射火箭
+    function launchRocket() {
+        if (isRocketMoving) return; // 如果火箭正在移动则忽略点击
+        isRocketMoving = true;
+        rocketSoundClone = rocketSound.cloneNode();
+        rocketSoundClone.play();
+        let rocketTop = rocket.offsetTop;
+
+        const rocketMove = setInterval(() => {
+            rocketTop -= rocketSpeed;
+            rocket.style.top = `${rocketTop}px`;
+
+            // 检查火箭是否击中飞机
+            planes.forEach(plane => {
+                const planeRect = plane.getBoundingClientRect();
+                const rocketRect = rocket.getBoundingClientRect();
+
+                if (rocketRect.left > planeRect.left &&
+                    rocketRect.left < planeRect.right &&
+                    rocketRect.top < planeRect.bottom &&
+                    rocketRect.top > planeRect.top) {
+                    // 击中飞机，移除飞机和火箭并调整得分
+                    showExplosion(planeRect.left, planeRect.top);
+                    gameCanvas.removeChild(plane);
+                    planes = planes.filter(p => p !== plane);
+                    score += plane.dataset.isEnemy === 'true' ? 10 : -10;
+                    scoreElement.textContent = `得分: ${score}`;
+                    clearInterval(rocketMove);
+                    rocket.style.top = '';
+                    isRocketMoving = false;
+                }
+            });
+
+            // 如果火箭飞出屏幕，停止移动并重置火箭位置
+            if (rocketTop < -100) {
+                clearInterval(rocketMove);
+                rocket.style.top = '';
+                isRocketMoving = false;
+            }
+        }, 20);
+    }
+
+    // 显示爆炸效��
+    function showExplosion(x, y) {
+        const explosion = document.createElement('div');
+        explosion.classList.add('explosion');
+        explosion.style.left = `${x}px`;
+        explosion.style.top = `${y}px`;
+        gameCanvas.appendChild(explosion);
+        let bangSoundClone = bangSound.cloneNode();
+        bangSoundClone.play();
+        setTimeout(() => {
+            gameCanvas.removeChild(explosion);
+        }, 500);
+    }
+
+    // 重置游戏
+    function resetGame() {
+        clearInterval(gameInterval);
+        clearInterval(planeInterval);
+        planes.forEach(plane => gameCanvas.removeChild(plane));
+        planes = [];
+        isRocketMoving = false;
+        rocket.style.top = '';
+        scoreElement.textContent = '得分: 0';
+        timeElement.textContent = '剩余时间: 120秒';
+    }
+
+    // 启动游戏
+    startGame();
+</script>
+
+</body>
+</html>
