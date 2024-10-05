@@ -29,7 +29,7 @@
         }
         .plane {
             position: absolute;
-            width: 100px;
+            width: 120px;
             height: 60px;
             background-size: cover;
         }
@@ -69,6 +69,7 @@
 </div>
 <audio id="rocketSound" src="assets/sounds/rocket.mp3"></audio>
 <audio id="bangSound" src="assets/sounds/bang.mp3"></audio>
+<audio id="winningSound" src="assets/sounds/winning.mp3"></audio>
 
 <script>
     // 定义游戏变量
@@ -108,6 +109,8 @@
         if (timeLeft <= 0) {
             clearInterval(gameInterval);
             clearInterval(planeInterval);
+            let winningSoundClone = winningSound.cloneNode();
+            winningSoundClone.play();
             alert(`游戏结束！你的最终得分是: ${score}`);
             resetGame();
         }
@@ -229,6 +232,7 @@
         rocket.style.top = '';
         scoreElement.textContent = '得分: 0';
         timeElement.textContent = '剩余时间: 120秒';
+        startGame(); // 重新启动游戏
     }
 
     // 启动游戏
