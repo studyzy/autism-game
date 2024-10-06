@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>气球游戏</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #87CEEB;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #gameCanvas {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #balloon {
+            width: 50px;
+            height: 50px;
+            background-color: #FF6F61;
+            border-radius: 50%;
+            position: absolute;
+            transition: width 0.1s ease, height 0.1s ease;
+        }
+        .circle {
+            position: absolute;
+            border: 2px dashed #fff;
+            border-radius: 50%;
+        }
+        #smallCircle {
+            width: 100px;
+            height: 100px;
+            top: calc(50% + 25px);
+            left: calc(50% - 50px);
+        }
+        #mediumCircle {
+            width: 150px;
+            height: 150px;
+            top: calc(50% - 25px);
+            left: calc(50% - 75px);
+        }
+        #largeCircle {
+            width: 200px;
+            height: 200px;
+            top: calc(50% - 75px);
+            left: calc(50% - 100px);
+        }
+        #explosionCircle {
+            width: 220px;
+            height: 220px;
+            top: calc(50% - 95px);
+            left: calc(50% - 110px);
+        }
+        #score, #time {
+            position: absolute;
+            top: 10px;
+            font-size: 24px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+        #score {
+            left: 10px;
+        }
+        #time {
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="gameCanvas">
+    <div id="balloon"></div>
+    <div id="smallCircle" class="circle"></div>
+    <div id="mediumCircle" class="circle"></div>
+    <div id="largeCircle" class="circle"></div>
+    <div id="explosionCircle" class="circle"></div>
+    <div id="score">得分: 0</div>
+    <div id="time">剩余时间: 120秒</div>
+</div>
+<audio id="popSound" src="assets/sounds/balloon-pop.mp3"></audio>
+<audio id="blownSound" src="assets/sounds/balloon-blown-up.mp3"></audio>
+
+<script>
+    // 游戏变量
+    const balloon = document.getElementById('balloon');
+    const scoreElement = document.getElementById('score');
+    const timeElement = document.getElementById('time');
+    const popSound = document.getElementById('popSound');
+    const blownSound = document.getElementById('blownSound');
+    let score = 0;
+    let timeLeft = 120;
+    let balloonSize = 50; // 初始气球大小
+    let animationFrame;
+
+    // 开始游戏
+    function startGame() {
+        score = 0;
+        timeLeft = 120;
+        balloonSize = 50;
+        scoreElement.textContent = `得分: ${score}`;
+        timeElement.textContent = `剩余时间: ${timeLeft}秒`;
+
+        resetBalloon();
+        setInterval(updateTimer, 1000); // 每秒更新计时器
+        gameCanvas.addEventListener('click', stopBalloon);
+    }
+
+    // 更新游戏
+    function updateGame() {
+        if (balloonSize < 220) {
+            balloonSize += 1; // 每次更新增大气球
+            balloon.style.top = `calc(50% + 75px - ${balloonSize - 50}px)`; // 调整top属性
+            balloon.style.width = `${balloonSize}px`;
+            balloon.style.height = `${balloonSize}px`; // 高度比例
+
+            animationFrame = requestAnimationFrame(updateGame);
+        } else {
+            popSound.play();
+            resetBalloon();
+        }
+    }
+
+    // 停止气球充气
+    function stopBalloon() {
+        cancelAnimationFrame(animationFrame);
+        let points = 0;
+
+        if (balloonSize <= 100) {
+            points = 0;
+        } else if (balloonSize <= 150) {
+            points = 10;
+        } else if (balloonSize <= 200) {
+            points = 20;
+        } else if (balloonSize <= 220) {
+            points = 30;
+        }else {//气球爆炸
+            points = -10;
+        }
+
+        score += points;
+        scoreElement.textContent = `得分: ${score}`;
+        resetBalloon();
+    }
+
+    // 更新计时器
+    function updateTimer() {
+        timeLeft--;
+        timeElement.textContent = `剩余时间: ${timeLeft}秒`;
+        if (timeLeft <= 0) {
+            alert(`时间到！你的最终得分是: ${score}`);
+            cancelAnimationFrame(animationFrame);
+            resetGame();
+        }
+    }
+
+    // 重置气球
+    function resetBalloon() {
+        balloonSize = 50; // 重置气球大小
+        balloon.style.width = `${balloonSize}px`;
+        balloon.style.height = `${balloonSize}px`;
+        balloon.style.top = `calc(50% + 75px - ${balloonSize - 50}px)`; // 调整top属性
+        updateGame(); // 重新开始充气
+        blownSound.play();
+    }
+
+    // 重置游戏
+    function resetGame() {
+        cancelAnimationFrame(animationFrame);
+        balloonSize = 50;
+        balloon.style.width = `${balloonSize}px`;
+        balloon.style.height = `${balloonSize}px`;
+        balloon.style.top = `calc(50% + 75px - ${balloonSize - 50}px)`; // 调整top属性
+
+    }
+
+    // 启动游戏
+    startGame();
+</script>
+</body>
+</html>
