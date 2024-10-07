@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导弹拦截游戏</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #87CEEB;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background-color: #fff;
+            border: 1px solid #000;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: black;
+        }
+        #time {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<div id="score">得分: 0</div>
+<div id="time">剩余时间: 120秒</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
+    const timeElement = document.getElementById('time');
+
+    let score = 0;
+    let timeLeft = 120;
+    let missiles = [];
+    let interceptors = [];
+    const N = 30; // 拦截成功的距离阈值
+
+    class Missile {
+    constructor() {
+        this.x = 0;
+        this.y = canvas.height; // From the bottom
+        this.angle = (Math.PI / 4) + (Math.random() * (Math.PI / 6) - (Math.PI / 12)); // 45 degrees ± 15 degrees
+        this.speed = Math.random() * 5 + 30; // Random initial speed
+        this.vx = this.speed * Math.cos(this.angle);
+        this.vy = -this.speed * Math.sin(this.angle);
+        this.gravity = 0.4; // Gravity acceleration
+        this.radius = 10;
+        this.image = new Image();
+        this.image.src = 'images/rocket.png';
+        this.imageWidth = 40; // Adjusted width
+        this.imageHeight = 80; // Adjusted height
+    }
+
+    update() {
+        this.x += this.vx/4.0;
+        this.y += this.vy/4.0;
+        this.vy += this.gravity; // Add gravity effect
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(Math.atan2(this.vy, this.vx) + Math.PI / 2); // Rotate to match the direction of velocity
+        ctx.drawImage(this.image, -this.imageWidth / 2, -this.imageHeight / 2, this.imageWidth, this.imageHeight);
+        ctx.restore();
+    }
+}
+
+    class Interceptor {
+        constructor(targetX, targetY) {
+            this.x = canvas.width * 0.75;
+            this.y = canvas.height ;
+            this.targetX = targetX;
+            this.targetY = targetY;
+            this.speed = 5; // 匀速直线运动
+            this.radius = 5;
+            this.distance = Math.hypot(targetX - this.x, targetY - this.y);
+            this.directionX = (targetX - this.x) / this.distance;
+            this.directionY = (targetY - this.y) / this.distance;
+        }
+
+        update() {
+            this.x += this.directionX * this.speed;
+            this.y += this.directionY * this.speed;
+        }
+
+        draw() {
+            ctx.fillStyle = 'blue';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function spawnMissile() {
+        missiles.push(new Missile());
+    }
+
+    function checkCollision() {
+        for (let i = interceptors.length - 1; i >= 0; i--) {
+            const interceptor = interceptors[i];
+            for (let j = missiles.length - 1; j >= 0; j--) {
+                const missile = missiles[j];
+                const distance = Math.hypot(interceptor.x - missile.x, interceptor.y - missile.y);
+                if (distance < N) {
+                    score += 10;
+                    missiles.splice(j, 1); // 移除导弹
+                    interceptors.splice(i, 1); // 移除拦截弹
+                    break;
+                }
+            }
+        }
+    }
+
+    function checkMissileOutOfBounds() {
+        for (let i = missiles.length - 1; i >= 0; i--) {
+            const missile = missiles[i];
+            if (missile.x > canvas.width) {
+                score -= 10;
+                missiles.splice(i, 1); // 移除导弹
+            }
+        }
+    }
+
+    function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        missiles.forEach(missile => {
+            missile.update();
+            missile.draw();
+        });
+        interceptors.forEach(interceptor => {
+            interceptor.update();
+            interceptor.draw();
+        });
+        checkCollision();
+        checkMissileOutOfBounds();
+        scoreElement.textContent = `得分: ${score}`;
+    }
+
+    function gameLoop() {
+        update();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+        setInterval(spawnMissile, 1000); // 每秒生成一枚导弹
+        const timerInterval = setInterval(() => {
+            timeLeft--;
+            timeElement.textContent = `剩余时间: ${timeLeft}秒`;
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                alert(`时间到！你的最终得分是: ${score}`);
+                resetGame();
+            }
+        }, 1000); // 每秒更新剩余时间
+        gameLoop();
+    }
+
+    function resetGame() {
+        score = 0;
+        timeLeft = 120;
+        scoreElement.textContent = '得分: 0';
+        timeElement.textContent = '剩余时间: 120秒';
+        missiles = [];
+        interceptors = [];
+    }
+
+    canvas.addEventListener('click', (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        interceptors.push(new Interceptor(x, y));
+    });
+
+    // 启动游戏
+    startGame();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打地鼠游戏</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #87CEEB;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #gameContainer {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 600px;
+            margin: 50px auto;
+        }
+        .hole {
+            width: 100px;
+            height: 100px;
+            background-color: #7CFC00;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+        }
+        .mole {
+            width: 70px;
+            height: 70px;
+            background-image: url('images/mole.png'); /* 地鼠图片 */
+            background-size: cover;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+        }
+        #score, #time {
+            position: absolute;
+            top: 10px;
+            font-size: 24px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+        #score {
+            left: 10px;
+        }
+        #time {
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="gameContainer"></div>
+<div id="score">得分: 0</div>
+<div id="time">剩余时间: 120秒</div>
+
+<script>
+    const gameContainer = document.getElementById('gameContainer');
+    const scoreElement = document.getElementById('score');
+    const timeElement = document.getElementById('time');
+    let score = 0;
+    let timeLeft = 120;
+    let moleTimeout;
+    let moleClickTimeout;
+
+    // 创建格子
+    for (let i = 0; i < 12; i++) {
+        const hole = document.createElement('div');
+        hole.classList.add('hole');
+        const mole = document.createElement('div');
+        mole.classList.add('mole');
+        hole.appendChild(mole);
+        gameContainer.appendChild(hole);
+    }
+
+    const holes = document.querySelectorAll('.hole');
+
+    // 随机显示地鼠
+    function showMole() {
+        const randomIndex = Math.floor(Math.random() * holes.length);
+        const mole = holes[randomIndex].querySelector('.mole');
+
+        mole.style.display = 'block';
+        moleClickTimeout = setTimeout(() => {
+            mole.style.display = 'none';
+            if (mole.style.display === 'block') {
+                score -= 10; // 扣分
+                scoreElement.textContent = `得分: ${score}`;
+            }
+        }, 5000); // 5秒后如果没有被打中消失
+
+        moleTimeout = setTimeout(() => {
+            mole.style.display = 'none';
+            clearTimeout(moleClickTimeout);
+            score -= 10; // 扣分
+            scoreElement.textContent = `得分: ${score}`;
+        }, 6000); // 地鼠闪烁1秒后消失
+    }
+
+    // 点击地鼠事件
+    function hitMole(event) {
+        if (event.target.classList.contains('mole')) {
+            score += 10;
+            scoreElement.textContent = `得分: ${score}`;
+            event.target.style.display = 'none';
+            clearTimeout(moleClickTimeout); // 清除扣分的计时器
+        }
+    }
+
+    // 开始游戏
+    function startGame() {
+        holes.forEach(hole => hole.addEventListener('click', hitMole));
+        const gameInterval = setInterval(() => {
+            showMole();
+        }, 2000); // 每2秒随机显示一个地鼠
+
+        const timerInterval = setInterval(() => {
+            timeLeft--;
+            timeElement.textContent = `剩余时间: ${timeLeft}秒`;
+            if (timeLeft <= 0) {
+                clearInterval(gameInterval);
+                clearInterval(timerInterval);
+                alert(`时间到！你的最终得分是: ${score}`);
+                resetGame();
+            }
+        }, 1000); // 每秒更新剩余时间
+    }
+
+    // 重置游戏
+    function resetGame() {
+        score = 0;
+        timeLeft = 120;
+        scoreElement.textContent = '得分: 0';
+        timeElement.textContent = '剩余时间: 120秒';
+        gameContainer.innerHTML = ''; // 清空游戏区域
+        for (let i = 0; i < 12; i++) {
+            const hole = document.createElement('div');
+            hole.classList.add('hole');
+            const mole = document.createElement('div');
+            mole.classList.add('mole');
+            hole.appendChild(mole);
+            gameContainer.appendChild(hole);
+        }
+        startGame();
+    }
+
+    // 启动游戏
+    startGame();
+</script>
+
+</body>
+</html>
