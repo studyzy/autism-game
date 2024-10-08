@@ -147,16 +147,16 @@
 
     function speak(text) {
         const voices = {
-            "西蒙说：摸摸头": {startTime: 0, duration: 1.7},
-            "摸摸头": {startTime: 0.8, duration: 0.85},
-            "西蒙说：摸摸眼睛": {startTime: 1.9, duration: 1.8},
-            "摸摸眼睛": {startTime: 2.8, duration: 0.9},
-            "西蒙说：摸摸鼻子": {startTime: 3.9, duration: 1.8},
-            "摸摸鼻子": {startTime: 4.8, duration: 0.9},
+            "西蒙说：摸摸头": {startTime: 0, duration: 1.8},
+            "摸摸头": {startTime: 0.8, duration: 0.9},
+            "西蒙说：摸摸眼睛": {startTime: 1.9, duration: 1.9},
+            "摸摸眼睛": {startTime: 2.8, duration: 1},
+            "西蒙说：摸摸鼻子": {startTime: 3.9, duration: 1.9},
+            "摸摸鼻子": {startTime: 4.8, duration: 1},
             "西蒙说：摸摸耳朵": {startTime: 5.9, duration: 1.9},
-            "摸摸耳朵": {startTime: 6.8, duration: 0.9},
-            "西蒙说：摸摸嘴巴": {startTime: 8.0, duration: 1.7},
-            "摸摸嘴巴": {startTime: 8.9, duration: 0.9}
+            "摸摸耳朵": {startTime: 6.8, duration: 1},
+            "西蒙说：摸摸嘴巴": {startTime: 8.0, duration: 1.9},
+            "摸摸嘴巴": {startTime: 8.9, duration: 1}
         }
         let voice = voices[text];
         audioPlayer.currentTime = voice.startTime;
