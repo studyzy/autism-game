@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蝴蝶游戏</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #gameArea {
+            position: relative;
+            width: 80vw;
+            height: 60vh;
+            border: 2px solid #6a5acd;
+            overflow: hidden;
+            background-color: #7CFC00;
+        }
+        .butterfly {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background-image: url('images/butterfly2.gif'); /* 请替换为实际蝴蝶图片路径 */
+            background-size: cover;
+            transition: transform 1s linear; /* 添加平滑移动动画 */
+        }
+        .highlight {
+            border-radius: 50%; /* 圆形边框 */
+            border: 4px solid white;
+        }
+        #scoreBoard {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="scoreBoard">
+    <h3>剩余时间: <span id="time">120</span>秒</h3>
+    <h3>难度值: <span id="difficulty">0</span></h3>
+    <h3>总得分: <span id="score">0</span></h3>
+</div>
+<div id="gameArea"></div>
+<button id="startBtn">开始游戏</button>
+
+<script>
+    class Butterfly {
+        constructor(isOriginal) {
+            this.element = document.createElement('div');
+            this.element.className = 'butterfly';
+            this.isOriginal = isOriginal;
+            this.clicked = false;
+            this.positionButterfly();
+            this.element.onclick = () => this.checkButterfly();
+            document.getElementById('gameArea').appendChild(this.element);
+        }
+
+        positionButterfly() {
+            const gameArea = document.getElementById('gameArea');
+            const x = Math.random() * (gameArea.clientWidth - 130);
+            const y = Math.random() * (gameArea.clientHeight - 130);
+            this.element.style.left = x + 'px';
+            this.element.style.top = y + 'px';
+        }
+
+        moveButterfly() {
+            const gameArea = document.getElementById('gameArea');
+            const maxX = gameArea.clientWidth - 130;
+            const maxY = gameArea.clientHeight - 130;
+            const angle = Math.random() * 2 * Math.PI;
+            let newX = parseFloat(this.element.style.left) + Math.cos(angle) * 100;
+            let newY = parseFloat(this.element.style.top) + Math.sin(angle) * 100;
+
+            // Boundary checks
+            if (newX < 0) newX = 0;
+            if (newX > maxX) newX = maxX;
+            if (newY < 0) newY = 0;
+            if (newY > maxY) newY = maxY;
+
+            this.element.style.transform = `translate(${newX - parseFloat(this.element.style.left)}px, ${newY - parseFloat(this.element.style.top)}px)`;
+        }
+
+        checkButterfly() {
+            if (!game.canClick) return;
+
+            if (this.isOriginal) {
+                this.clicked = true;
+                this.element.classList.add('highlight');
+                if (game.allOriginalClicked()) {
+                    game.score += 10;
+                    game.startGame();
+                }
+            } else {
+                game.score -= 10;
+                alert("点错了！");
+                game.startGame();
+            }
+            document.getElementById('score').innerText = game.score;
+        }
+    }
+
+    class Game {
+        constructor() {
+            this.butterflies = [];
+            this.score = 0;
+            this.time = 120;
+            this.x = 4; // 初始蝴蝶数量
+            this.y = 2; // 新增蝴蝶数量
+            this.gameInterval = null;
+            this.timeInterval = null;
+            this.canClick = false;
+            document.getElementById('startBtn').onclick = () => this.startGame();
+        }
+
+        startGame() {
+            this.clearGame();
+            this.score = 0;
+            this.x = Math.floor(this.score / 10) + 4; // 难度
+            this.y = Math.floor(this.score / 10) + 2; // 难度
+            this.time = 120;
+            document.getElementById('time').innerText = this.time;
+            document.getElementById('score').innerText = this.score;
+            this.createButterflies(this.x);
+            this.timeInterval = setInterval(() => this.updateTime(), 1000);
+            this.gameInterval = setInterval(() => this.moveButterflies(), 1000);
+            // 5s后停止移动并允许点击
+            setTimeout(() => {
+                clearInterval(this.gameInterval);
+                this.canClick = true;
+            }, 5000);
+        }
+
+        updateTime() {
+            this.time--;
+            document.getElementById('time').innerText = this.time;
+            if (this.time <= 0) this.endGame();
+        }
+
+        clearGame() {
+            this.butterflies.forEach(b => b.element.remove());
+            this.butterflies = [];
+            clearInterval(this.gameInterval);
+            clearInterval(this.timeInterval);
+            this.canClick = false;
+        }
+
+        createButterflies(count) {
+            for (let i = 0; i < count; i++) {
+                this.butterflies.push(new Butterfly(true));
+            }
+            setTimeout(() => {
+                this.createAdditionalButterflies(this.y);
+            }, 3000);
+        }
+
+        createAdditionalButterflies(count) {
+            for (let i = 0; i < count; i++) {
+                this.butterflies.push(new Butterfly(false));
+            }
+        }
+
+        moveButterflies() {
+            this.butterflies.forEach(b => b.moveButterfly());
+            this.checkCollisions();
+        }
+        checkCollisions() {
+            for (let i = 0; i < this.butterflies.length; i++) {
+                for (let j = i + 1; j < this.butterflies.length; j++) {
+                    const b1 = this.butterflies[i];
+                    const b2 = this.butterflies[j];
+                    const dx = parseFloat(b1.element.style.left) - parseFloat(b2.element.style.left);
+                    const dy = parseFloat(b1.element.style.top) - parseFloat(b2.element.style.top);
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) { // 100 is the sum of the radii (50 + 50)
+                        // Change direction
+                        b1.moveButterfly();
+                        b2.moveButterfly();
+                    }
+                }
+            }
+        }
+        allOriginalClicked() {
+            return this.butterflies.filter(b => b.isOriginal).every(b => b.clicked);
+        }
+
+        endGame() {
+            this.clearGame();
+            alert(`游戏结束！你的得分是: ${this.score}`);
+        }
+    }
+
+    const game = new Game();
+</script>
+
+</body>
+</html>

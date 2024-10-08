@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专注力游戏</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background-color: #87CEEB;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            position: relative;
+            width: 600px;
+            height: 600px;
+            background-color: #fff;
+            border: 2px solid #000;
+            border-radius: 50%;
+        }
+        .circle {
+            position: absolute;
+            border: 2px dashed #000;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+        }
+        #score, #time, #difficulty {
+            position: absolute;
+            top: 10px;
+            font-size: 20px;
+            color: black;
+        }
+        #difficulty {
+            left: 10px;
+        }
+        #score {
+            right: 10px;
+        }
+        #time {
+            top: 10px;
+            text-align: center;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+<div id="score">得分: 0</div>
+<div id="difficulty">难度: 0</div>
+<div id="time">剩余时间: 120秒</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
+    const difficultyElement = document.getElementById('difficulty');
+    const timeElement = document.getElementById('time');
+
+    let score = 0;
+    let timeLeft = 120;
+    let currentLetter = '';
+    let currentIndex = 0;
+    let circles = [];
+    let intervalX;
+    let intervalN;
+
+    // 生成随机字母或数字
+    function getRandomCharacter() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        return chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    // 初始化圆形位置和内容
+    function initCircles() {
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = 200; // 小圆形与中心圆形的距离
+
+        circles = [];
+        for (let i = 0; i < 12; i++) {
+            const angle = (i * Math.PI * 2) / 12;
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            circles.push({ x, y, char: getRandomCharacter(), visible: false });
+        }
+    }
+
+    // 更新游戏状态
+    function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 画中央圆形
+        ctx.fillStyle = 'lightgreen';
+        ctx.beginPath();
+        ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'black';
+        ctx.fillText(currentLetter, canvas.width / 2 - 10, canvas.height / 2 + 10);
+
+        // 画小圆形
+        circles.forEach((circle, index) => {
+            ctx.fillStyle = circle.visible ? 'orange' : 'lightgray';
+            ctx.beginPath();
+            ctx.arc(circle.x, circle.y, 30, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'black';
+            if (circle.visible) {
+                ctx.fillText(circle.char, circle.x - 10, circle.y + 10);
+            }
+        });
+    }
+
+    // 游戏循环
+    function gameLoop() {
+        update();
+        if (timeLeft <= 0) {
+            clearInterval(intervalX);
+            clearInterval(intervalN);
+            alert(`时间到！你的最终得分是: ${score}`);
+            resetGame();
+        }
+    }
+
+    // 重置游戏
+    function resetGame() {
+        score = 0;
+        timeLeft = 120;
+        currentIndex = 0;
+        initCircles();
+        scoreElement.textContent = '得分: 0';
+        timeElement.textContent = '剩余时间: 120秒';
+        difficultyElement.textContent = '难度: 0';
+        startGame();
+    }
+
+    // 启动游戏
+    function startGame() {
+        initCircles();
+        currentLetter = getRandomCharacter();
+        scoreElement.textContent = `得分: ${score}`;
+        timeElement.textContent = `剩余时间: ${timeLeft}秒`;
+        difficultyElement.textContent = `难度: ${Math.floor(score / 10)}`;
+
+        const timer = setInterval(() => {
+            timeLeft--;
+            timeElement.textContent = `剩余时间: ${timeLeft}秒`;
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+            }
+        }, 1000);
+
+        intervalX = setInterval(() => {
+            if (currentIndex >= circles.length) {
+                currentIndex = 0;
+            }
+            circles[currentIndex].visible = true;
+
+            setTimeout(() => {
+                circles[currentIndex].visible = false;
+                currentIndex++;
+            }, (1000 - Math.floor(score / 10) * 50));
+
+            setTimeout(() => {
+                currentLetter = getRandomCharacter();
+                difficultyElement.textContent = `难度: ${Math.floor(score / 10)}`;
+            }, 1000);
+        }, 1000);
+    }
+
+    // 处理点击事件
+    canvas.addEventListener('click', (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+
+        circles.forEach(circle => {
+            const distance = Math.hypot(circle.x - x, circle.y - y);
+            if (distance < 30 && circle.visible) {
+                if (circle.char === currentLetter) {
+                    score += 10;
+                } else {
+                    score -= 10;
+                }
+                scoreElement.textContent = `得分: ${score}`;
+            }
+        });
+    });
+
+    // 启动游���
+    startGame();
+    setInterval(gameLoop, 1000 / 60); // 60 FPS
+</script>
+
+</body>
+</html>
