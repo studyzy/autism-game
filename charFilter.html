@@ -3,204 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>专注力游戏</title>
+    <title>专注力和记忆力训练游戏</title>
     <style>
         body {
             margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
             overflow: hidden;
+        }
+
+        #gameCanvas {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            background-color: #87CEEB;
-            font-family: Arial, sans-serif;
         }
-        #gameCanvas {
-            position: relative;
-            width: 600px;
-            height: 600px;
-            background-color: #fff;
-            border: 2px solid #000;
-            border-radius: 50%;
-        }
+
         .circle {
             position: absolute;
-            border: 2px dashed #000;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: #000;
+            background-color: #e0e0e0;
+            transition: background-color 0.5s ease;
         }
-        #score, #time, #difficulty {
+
+        .bigCircle {
+            width: 15vw;
+            height: 15vw;
+            background-color: #f0f0f0;
+            font-size: 10vw;
+        }
+
+        .smallCircle {
+            width: 8vw;
+            height: 8vw;
+            background-color: #d0d0d0;
+            font-size: 5vw;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #time, #score, #difficulty {
             position: absolute;
-            top: 10px;
+            top: 20px;
             font-size: 20px;
-            color: black;
         }
-        #difficulty {
-            left: 10px;
-        }
-        #score {
-            right: 10px;
-        }
-        #time {
-            top: 10px;
-            text-align: center;
-            left: 50%;
-            transform: translateX(-50%);
+
+        #time { left: 10px; }
+        #score { right: 10px; }
+        #difficulty { left: 50%; transform: translateX(-50%); }
+
+        @media (max-width: 768px) {
+            .bigCircle {
+                width: 100px;
+                height: 100px;
+            }
+
+            .smallCircle {
+                width: 60px;
+                height: 60px;
+                font-size: 30px;
+            }
         }
     </style>
 </head>
 <body>
 
-<canvas id="gameCanvas"></canvas>
-<div id="score">得分: 0</div>
-<div id="difficulty">难度: 0</div>
-<div id="time">剩余时间: 120秒</div>
+<div id="gameCanvas">
+    <div id="bigCircle" class="circle bigCircle"></div>
+    <div id="time">剩余时间: 120秒</div>
+    <div id="score">得分: 0</div>
+    <div id="difficulty">难度: 0</div>
+</div>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    const emojiList = ['🍎', '🍊', '🍌', '🍉', '🍇', '🍓', '🍒', '🍍', '🍑', '🥭', '🥥', '🥑', '🥦', '🥒', '🌽', '🍆', '🍅', '🥕'];
+
+    const gameCanvas = document.getElementById('gameCanvas');
+    const bigCircle = document.getElementById('bigCircle');
+    const timeElement = document.getElementById('time');
     const scoreElement = document.getElementById('score');
     const difficultyElement = document.getElementById('difficulty');
-    const timeElement = document.getElementById('time');
 
     let score = 0;
     let timeLeft = 120;
-    let currentLetter = '';
-    let currentIndex = 0;
+    let difficulty = 0;
+    let selectedEmoji = '';
     let circles = [];
-    let intervalX;
-    let intervalN;
+    let highlightTime = 5; // 初始高亮时间为5秒
+    let gameInterval;
+    let roundInterval;
 
-    // 生成随机字母或数字
-    function getRandomCharacter() {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        return chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-
-    // 初始化圆形位置和内容
-    function initCircles() {
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const radius = 200; // 小圆形与中心圆形的距离
-
-        circles = [];
+    // 初始化小圆的位置，围绕大圆
+    function initSmallCircles() {
+        const radius = 200;
+        const angleStep = (2 * Math.PI) / 12;
         for (let i = 0; i < 12; i++) {
-            const angle = (i * Math.PI * 2) / 12;
-            const x = centerX + radius * Math.cos(angle);
-            const y = centerY + radius * Math.sin(angle);
-            circles.push({ x, y, char: getRandomCharacter(), visible: false });
+            const angle = i * angleStep;
+            const x = radius * Math.cos(angle);
+            const y = radius * Math.sin(angle);
+
+            const smallCircle = document.createElement('div');
+            smallCircle.classList.add('circle', 'smallCircle');
+            smallCircle.style.left = `${50-4 + x / window.innerWidth * 130}vw`;
+            smallCircle.style.top = `${50-8 + y / window.innerHeight * 130}vh`;
+
+            smallCircle.addEventListener('click', () => handleCircleClick(smallCircle));
+
+            gameCanvas.appendChild(smallCircle);
+            circles.push(smallCircle);
         }
     }
 
-    // 更新游戏状态
-    function update() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // 画中央圆形
-        ctx.fillStyle = 'lightgreen';
-        ctx.beginPath();
-        ctx.arc(canvas.width / 2, canvas.height / 2, 50, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = 'black';
-        ctx.fillText(currentLetter, canvas.width / 2 - 10, canvas.height / 2 + 10);
-
-        // 画小圆形
-        circles.forEach((circle, index) => {
-            ctx.fillStyle = circle.visible ? 'orange' : 'lightgray';
-            ctx.beginPath();
-            ctx.arc(circle.x, circle.y, 30, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = 'black';
-            if (circle.visible) {
-                ctx.fillText(circle.char, circle.x - 10, circle.y + 10);
-            }
-        });
-    }
-
-    // 游戏循环
-    function gameLoop() {
-        update();
-        if (timeLeft <= 0) {
-            clearInterval(intervalX);
-            clearInterval(intervalN);
-            alert(`时间到！你的最终得分是: ${score}`);
-            resetGame();
-        }
-    }
-
-    // 重置游戏
-    function resetGame() {
+    // 初始化游戏
+    function startGame() {
         score = 0;
         timeLeft = 120;
-        currentIndex = 0;
-        initCircles();
-        scoreElement.textContent = '得分: 0';
-        timeElement.textContent = '剩余时间: 120秒';
-        difficultyElement.textContent = '难度: 0';
-        startGame();
+        difficulty = 0;
+        circles = [];
+        highlightTime = 5;
+
+        initSmallCircles();
+        updateUI();
+        gameInterval = setInterval(gameLoop, 1000);
+
+        startNewRound();
+    }
+
+    // 更新界面显示
+    function updateUI() {
+        scoreElement.textContent = `得分: ${score}`;
+        timeElement.textContent = `剩余时间: ${timeLeft}秒`;
+        difficultyElement.textContent = `难度: ${difficulty}`;
+    }
+
+    // 游戏主循环
+    function gameLoop() {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(gameInterval);
+            clearInterval(roundInterval);
+            alert(`游戏结束！你的最终得分是: ${score}`);
+            return;
+        }
+        updateUI();
+    }
+
+    // 开始新的一轮
+    function startNewRound() {
+        difficulty = Math.floor(score / 40);
+        highlightTime = Math.max(1, 5 - difficulty); // 难度增加时，高亮时间减少，最短为1秒
+        selectedEmoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+        bigCircle.textContent = selectedEmoji; // 在大圆中显示随机Emoji
+
+        let i = 0;
+        function highlightNextCircle() {
+    const circle = circles[i % 12];
+    const randomChance = Math.random();
+
+    if (randomChance < 1 / 3) {
+        // 三分之一的概率显示中间的大图
+        circle.textContent = selectedEmoji;
+    } else {
+        // 三分之二的概率随机显示
+        circle.textContent = emojiList[Math.floor(Math.random() * emojiList.length)];
+    }
+
+    circle.style.backgroundColor = '#ffd700'; // 高亮黄色
+    setTimeout(() => {
+        circle.style.backgroundColor = '#d0d0d0'; // 取消高亮
+        circle.textContent = ''; // 隐藏Emoji
+    }, highlightTime * 1000);
+}
+        // 每隔1秒高亮一个小圆
+        roundInterval= setInterval(function () {
+            highlightNextCircle();
+            i++;
+        },  1000);
+
+    }
+
+    // 处理小圆的点击事件
+    function handleCircleClick(circle) {
+        const clickedEmoji = circle.textContent;
+        if (clickedEmoji === selectedEmoji) {
+            score += 10;
+            circle.style.backgroundColor = 'green'; // 正确，绿色
+        } else {
+            score -= 10;
+            circle.style.backgroundColor = 'red'; // 错误，红色
+        }
+
+        setTimeout(() => {
+            circle.style.backgroundColor = '#d0d0d0'; // 恢复默认背景
+            circle.textContent = ''; // 清空Emoji
+            updateUI();
+        }, 1000);
     }
 
     // 启动游戏
-    function startGame() {
-        initCircles();
-        currentLetter = getRandomCharacter();
-        scoreElement.textContent = `得分: ${score}`;
-        timeElement.textContent = `剩余时间: ${timeLeft}秒`;
-        difficultyElement.textContent = `难度: ${Math.floor(score / 10)}`;
-
-        const timer = setInterval(() => {
-            timeLeft--;
-            timeElement.textContent = `剩余时间: ${timeLeft}秒`;
-            if (timeLeft <= 0) {
-                clearInterval(timer);
-            }
-        }, 1000);
-
-        intervalX = setInterval(() => {
-            if (currentIndex >= circles.length) {
-                currentIndex = 0;
-            }
-            circles[currentIndex].visible = true;
-
-            setTimeout(() => {
-                circles[currentIndex].visible = false;
-                currentIndex++;
-            }, (1000 - Math.floor(score / 10) * 50));
-
-            setTimeout(() => {
-                currentLetter = getRandomCharacter();
-                difficultyElement.textContent = `难度: ${Math.floor(score / 10)}`;
-            }, 1000);
-        }, 1000);
-    }
-
-    // 处理点击事件
-    canvas.addEventListener('click', (event) => {
-        const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        circles.forEach(circle => {
-            const distance = Math.hypot(circle.x - x, circle.y - y);
-            if (distance < 30 && circle.visible) {
-                if (circle.char === currentLetter) {
-                    score += 10;
-                } else {
-                    score -= 10;
-                }
-                scoreElement.textContent = `得分: ${score}`;
-            }
-        });
-    });
-
-    // 启动游���
     startGame();
-    setInterval(gameLoop, 1000 / 60); // 60 FPS
 </script>
 
 </body>
