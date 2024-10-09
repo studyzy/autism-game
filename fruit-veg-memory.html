@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专注力和记忆力训练游戏</title>
+    <style>
+        body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-family: Arial, sans-serif;
+    background-color: #f0f8ff;
+    height: 100vh;
+}
+#gameCanvas {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 80%;
+    position: relative;
+}
+#emojiContainer {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px;
+    font-size: 10vw;;
+}
+#progressBarContainer {
+    width: 100%;
+    height: 20px;
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+#progressBar {
+    height: 100%;
+    width: 100%;
+    background-color: #76c7c0;
+    transition: width 0.1s linear;
+}
+.emoji {
+    font-size: 20vw;
+}
+#buttons {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+}
+button {
+    width: 150px;
+    height: 60px;
+    font-size: 20px;
+    cursor: pointer;
+    border-radius: 10px;
+    border: none;
+}
+#score, #time, #difficulty {
+    font-size: 20px;
+    margin: 10px;
+}
+#score { position: absolute; top: 10px; left: 10px; }
+#difficulty { position: absolute; top: 10px; right: 10px; }
+#time { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); }
+button:active {
+    transform: scale(0.95);
+}
+@media (max-width: 768px) {
+    .emoji {
+        font-size: 140px;
+    }
+    button {
+        width: 120px;
+        height: 50px;
+        font-size: 18px;
+    }
+}
+@media (max-width: 480px) {
+    .emoji {
+        font-size: 100px;
+    }
+    button {
+        width: 100px;
+        height: 40px;
+        font-size: 16px;
+    }
+}
+    </style>
+</head>
+<body>
+
+<div id="gameCanvas">
+    <div id="progressBarContainer">
+        <div id="progressBar"></div>
+    </div>
+    <div id="emojiContainer"></div>
+    <div id="bigEmoji" class="emoji"></div>
+    <div id="buttons">
+        <button id="appearedButton">出现过</button>
+        <button id="notAppearedButton">没出现</button>
+    </div>
+    <div id="score">得分: 0</div>
+    <div id="time">剩余时间: 120秒</div>
+    <div id="difficulty">难度: 0</div>
+</div>
+
+<script>
+    const emojiList = ['🍏', '🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑', '🍍', '🥭', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥒', '🥬', '🥕', '🌽', '🌶️', '🥔', '🍠', '🌰', '🥜'];
+    const gameCanvas = document.getElementById('gameCanvas');
+    const emojiContainer = document.getElementById('emojiContainer');
+    const bigEmoji = document.getElementById('bigEmoji');
+    const appearedButton = document.getElementById('appearedButton');
+    const notAppearedButton = document.getElementById('notAppearedButton');
+    const scoreElement = document.getElementById('score');
+    const timeElement = document.getElementById('time');
+    const difficultyElement = document.getElementById('difficulty');
+
+    let score = 0;
+    let timeLeft = 120;
+    let difficulty = 0;
+    let previousEmojis = [];
+    let currentBigEmoji = '';
+    let appearedBefore = false;
+    let gameInterval;
+
+    // 初始化游戏
+    function startGame() {
+        score = 0;
+        timeLeft = 120;
+        difficulty = 0;
+        updateUI();
+        gameInterval = setInterval(gameLoop, 1000);
+        startNewRound();
+    }
+
+    // 更新界面显示
+    function updateUI() {
+        scoreElement.textContent = `得分: ${score}`;
+        timeElement.textContent = `剩余时间: ${timeLeft}秒`;
+        difficultyElement.textContent = `难度: ${difficulty}`;
+    }
+
+    // 游戏主循环
+    function gameLoop() {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(gameInterval);
+            alert(`游戏结束！你的最终得分是: ${score}`);
+            return;
+        }
+        updateUI();
+    }
+
+    // 开始新的一轮
+    function startNewRound() {
+        difficulty = Math.floor(score / 40);
+        const numEmojis = 4 + difficulty; // 难度增加时，选项数量增加
+
+        // 随机选取 numEmojis 个不同的 Emoji
+        previousEmojis = [];
+        while (previousEmojis.length < numEmojis) {
+            const randomEmoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+            if (!previousEmojis.includes(randomEmoji)) {
+                previousEmojis.push(randomEmoji);
+            }
+        }
+
+        displayEmojis();
+    }
+
+    // 显示 4 个随机 Emoji
+    function displayEmojis() {
+    emojiContainer.innerHTML = '';
+    previousEmojis.forEach(emoji => {
+        const emojiElement = document.createElement('div');
+        emojiElement.textContent = emoji;
+        emojiContainer.appendChild(emojiElement);
+    });
+
+    // 初始化进度条
+    const progressBar = document.getElementById('progressBar');
+    let timeLeft = 5.0; // 5秒倒计时
+    const interval = setInterval(() => {
+        timeLeft -= 0.1;
+        if (timeLeft <= 0) {
+            clearInterval(interval);
+            emojiContainer.innerHTML = ''; // 清空
+            showBigEmoji();
+        }
+        progressBar.style.width = `${(timeLeft / 5.0) * 100}%`;
+    }, 100);
+}
+
+    // 显示大Emoji并判断是否出现在之前的小Emoji中
+    function showBigEmoji() {
+        appearedBefore = Math.random() < 0.5; // 50%的概率
+        if (appearedBefore) {
+            currentBigEmoji = previousEmojis[Math.floor(Math.random() * previousEmojis.length)];
+        } else {
+            let randomEmoji;
+            do {
+                randomEmoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+            } while (previousEmojis.includes(randomEmoji));
+            currentBigEmoji = randomEmoji;
+        }
+        bigEmoji.textContent = currentBigEmoji; // 显示大Emoji
+    }
+
+    // 处理按钮点击
+    function handleButtonClick(isAppeared) {
+        if (isAppeared === appearedBefore) {
+            score += 10;
+        } else {
+            score -= 10;
+        }
+        bigEmoji.textContent = ''; // 清空大Emoji
+        updateUI();
+        startNewRound(); // 开启新一轮
+    }
+
+    // 按钮事件绑定
+    appearedButton.addEventListener('click', () => handleButtonClick(true));
+    notAppearedButton.addEventListener('click', () => handleButtonClick(false));
+
+    // 启动游戏
+    startGame();
+</script>
+
+</body>
+</html>
