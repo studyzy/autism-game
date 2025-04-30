@@ -166,32 +166,90 @@
 
   // 初始化游戏
   function initGame() {
-    characters = [...qianziwen];
+    // 加载存储的进度
+    const savedProgress = JSON.parse(localStorage.getItem('progress'));
+    let knownCharacters = [];
+    let unknownCharacters = [];
+
+    if (savedProgress) {
+      knownCharacters = savedProgress.knownCharacters || [];
+      unknownCharacters = savedProgress.unknownCharacters || [];
+    }
+
+    // 从千字文中移除已认识和未认识的字
+    characters = qianziwen.filter(char => !knownCharacters.includes(char) && !unknownCharacters.includes(char));
+
+    // 如果没有剩余字，重新开始
+    if (characters.length === 0) {
+      localStorage.removeItem('progress');
+      characters = [...qianziwen];
+      knownCharacters = [];
+      unknownCharacters = [];
+    }
+
     // 打乱顺序（Fisher-Yates算法）
-    for(let i = characters.length-1; i>0; i--){
-      const j = Math.floor(Math.random()*(i+1));
+    for (let i = characters.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
       [characters[i], characters[j]] = [characters[j], characters[i]];
     }
+
     currentIndex = 0;
-    correctCount = 0;
+    correctCount = knownCharacters.length;
+
+    // 设置已测数量
+    const testedCount = knownCharacters.length + unknownCharacters.length;
+    document.getElementById('total').textContent = testedCount;
+
+    // 显示第一个字
     showNextCharacter();
+
+    // 保存初始化后的状态
+    localStorage.setItem('progress', JSON.stringify({
+      knownCharacters: knownCharacters,
+      unknownCharacters: unknownCharacters
+    }));
   }
 
   // 显示下一个字
   function showNextCharacter() {
-    if(currentIndex >= characters.length) {
+    if (currentIndex >= characters.length) {
       showResult();
       return;
     }
-    document.getElementById('currentChar').textContent = characters[currentIndex];
-    document.getElementById('total').textContent = currentIndex;
+    const currentChar = characters[currentIndex];
+    document.getElementById('currentChar').textContent = currentChar;
+
+    // 更新已测数量
+    const savedProgress = JSON.parse(localStorage.getItem('progress'));
+    const testedCount = (savedProgress.knownCharacters || []).length + (savedProgress.unknownCharacters || []).length;
+    document.getElementById('total').textContent = testedCount;
+
     document.getElementById('correct').textContent = correctCount;
   }
-
   // 处理答案
   function handleAnswer(isCorrect) {
-    if(isCorrect) correctCount++;
+    const currentChar = characters[currentIndex];
+
+    // 加载存储的进度
+    const savedProgress = JSON.parse(localStorage.getItem('progress'));
+    const knownCharacters = savedProgress.knownCharacters || [];
+    const unknownCharacters = savedProgress.unknownCharacters || [];
+
+    if (isCorrect) {
+      correctCount++;
+      knownCharacters.push(currentChar);
+    } else {
+      unknownCharacters.push(currentChar);
+    }
+
     currentIndex++;
+
+    // 存储更新后的进度
+    localStorage.setItem('progress', JSON.stringify({
+      knownCharacters: knownCharacters,
+      unknownCharacters: unknownCharacters
+    }));
+
     // 添加点击动画
     document.getElementById('currentChar').style.transform = 'scale(0.9)';
     setTimeout(() => {
@@ -202,6 +260,9 @@
 
   // 显示最终结果
   function showResult() {
+    // 清除存储的进度
+    localStorage.removeItem('progress');
+
     document.getElementById('container').innerHTML = `
         <div class="result">
             <div style="font-size:1.5em">🎉 挑战完成 🎉</div>
