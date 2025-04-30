@@ -220,7 +220,7 @@
     document.getElementById('currentChar').textContent = currentChar;
 
     // 更新已测数量
-    const savedProgress = JSON.parse(localStorage.getItem('progress'));
+    const savedProgress = JSON.parse(localStorage.getItem('progress')) || { knownCharacters: [], unknownCharacters: [] };
     const testedCount = (savedProgress.knownCharacters || []).length + (savedProgress.unknownCharacters || []).length;
     document.getElementById('total').textContent = testedCount;
 
@@ -231,7 +231,7 @@
     const currentChar = characters[currentIndex];
 
     // 加载存储的进度
-    const savedProgress = JSON.parse(localStorage.getItem('progress'));
+    const savedProgress = JSON.parse(localStorage.getItem('progress')) || { knownCharacters: [], unknownCharacters: [] };
     const knownCharacters = savedProgress.knownCharacters || [];
     const unknownCharacters = savedProgress.unknownCharacters || [];
 
