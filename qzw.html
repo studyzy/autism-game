@@ -167,7 +167,7 @@
   // 初始化游戏
   function initGame() {
     // 加载存储的进度
-    const savedProgress = JSON.parse(localStorage.getItem('progress'));
+    const savedProgress = JSON.parse(localStorage.getItem('progress')) || { knownCharacters: [], unknownCharacters: [] };
     let knownCharacters = [];
     let unknownCharacters = [];
 
